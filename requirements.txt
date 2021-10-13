@@ -1,0 +1,15 @@
+aiodns==3.0.0
+aiohttp==3.7.4.post0
+async-timeout==3.0.1
+attrs==21.2.0
+backoff==1.10.0
+base58==2.1.0
+cffi==1.14.5
+chardet==4.0.0
+idna==3.2
+loguru==0.5.3
+multidict==5.1.0
+pycares==4.0.0
+pycparser==2.20
+typing-extensions==3.10.0.0
+yarl==1.6.3
