@@ -13,8 +13,21 @@ from .exceptions import RateLimitedException, SolanaException, WebSocketClosedEx
 from .ratelimit import RateLimit
 from . import config
 
-SOLANA_DEVNET_HTTP_ENDPOINT = "https://api.devnet.solana.com"
-SOLANA_DEVNET_WS_ENDPOINT = "wss://api.devnet.solana.com"
+WS_PREFIX = "wss"
+HTTP_PREFIX = "https"
+
+DEVNET_ENDPOINT = "api.devnet.solana.com"
+TESTNET_ENDPOINT = "api.testnet.solana.com"
+MAINNET_ENDPOINT = "api.mainnet-beta.solana.com"
+
+SOLANA_DEVNET_WS_ENDPOINT = WS_PREFIX + "://" + DEVNET_ENDPOINT
+SOLANA_DEVNET_HTTP_ENDPOINT = HTTP_PREFIX + "://" + DEVNET_ENDPOINT
+
+SOLANA_TESTNET_WS_ENDPOINT = WS_PREFIX + "://" + TESTNET_ENDPOINT
+SOLANA_TESTNET_HTTP_ENDPOINT = HTTP_PREFIX + "://" + TESTNET_ENDPOINT
+
+SOLANA_MAINNET_WS_ENDPOINT = WS_PREFIX + "://" + MAINNET_ENDPOINT
+SOLANA_MAINNET_HTTP_ENDPOINT = HTTP_PREFIX + "://" + MAINNET_ENDPOINT
 
 
 class SolanaPublicKey:
