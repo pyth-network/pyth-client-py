@@ -75,9 +75,9 @@ class RateLimit:
 
     @staticmethod
     def _return_interval(instance_interval: RateLimitInterval, default_interval: RateLimitInterval) -> float:
-        if instance_interval is None or instance_interval is 0:
+        if instance_interval is None or instance_interval == 0:
             return 0
-        elif instance_interval == False:
+        elif instance_interval is False:
             return default_interval or 0
         return instance_interval
 
