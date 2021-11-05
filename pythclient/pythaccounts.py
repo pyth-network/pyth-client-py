@@ -396,6 +396,10 @@ class PythPriceInfo:
     def __repr__(self) -> str:
         return str(self)
 
+    def __iter__(self):
+        for key, val in self.__dict__.items():
+            yield key, val
+
 
 class PythPriceComponent: # This has the individual prices each publisher
     """
