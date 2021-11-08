@@ -10,6 +10,6 @@ setup(
     author_email='contact@pyth.network',
     install_requires=requirements,
     extras_require={
-        'testing': requirements + ['pytest', 'pytest-cov'],
+        'testing': requirements + ['mock', 'pytest', 'pytest-cov', 'pytest-socket'],
     },
 )
