@@ -345,6 +345,11 @@ class PythProductAccount(PythAccount):
     def __repr__(self) -> str:
         return str(self)
 
+    def __iter__(self):
+        for key, val in self.__dict__.items():
+            if not key.startswith('_'):
+                yield key, val
+
 
 class PythPriceInfo:
     """
