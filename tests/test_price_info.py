@@ -16,8 +16,8 @@ def price_info_trading():
 @pytest.fixture
 def price_info_trading_bytes():
     return bytes([
-            16, 161, 251, 224, 13, 0, 0, 0, 100, 83, 145, 2, 0, 0,
-            0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 65, 200, 71, 6, 0, 0, 0, 0,
+        16, 161, 251, 224, 13, 0, 0, 0, 100, 83, 145, 2, 0, 0,
+        0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 65, 200, 71, 6, 0, 0, 0, 0,
     ])
 
 
@@ -35,6 +35,7 @@ def price_info_trading_bytes():
         ),
         (0, 0, PythPriceStatus.UNKNOWN, 100001, -9, 0.0, 0.0),
     ],
+    ids=["price_status_trading", "price_status_unknown"],
 )
 class TestPythPriceInfo:
     def test_price_info(
