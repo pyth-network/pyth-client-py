@@ -401,9 +401,10 @@ class PythPriceInfo:
             yield key, val
 
 
-class PythPriceComponent: # This has the individual prices each publisher
+class PythPriceComponent:
     """
-    Represents a price component.
+    Represents a price component. This is the individual prices each
+    publisher sends in addition to their aggregate.
 
     Attributes:
         publisher_key (SolanaPublicKey): the public key of the publisher
@@ -442,6 +443,12 @@ class PythPriceComponent: # This has the individual prices each publisher
         offset += PythPriceInfo.LENGTH
         latest_price = PythPriceInfo.deserialise(buffer, offset, exponent=exponent)
         return PythPriceComponent(key, last_aggregate_price, latest_price, exponent)
+
+    def __iter__(self):
+        for key, val in self.__dict__.items():
+            if isinstance(val, PythPriceInfo):
+                val = dict(val)
+            yield key, val
 
 
 class PythPriceAccount(PythAccount):
