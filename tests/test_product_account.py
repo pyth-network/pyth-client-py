@@ -2,10 +2,12 @@ import mock
 import pytest
 
 import pythclient.pythaccounts
+from pythclient.exceptions import NotLoadedException
 from pythclient.solana import SolanaPublicKey, SolanaClient
 from pythclient.pythaccounts import (
-    PythProductAccount,
     _VERSION_2,
+    PythPriceAccount,
+    PythProductAccount,
     _read_attribute_string,
 )
 
@@ -123,3 +125,20 @@ def test_human_readable(func, product_account):
         "PythProductAccount BCH/USD (5uKdRzB3FzdmwyCHrqSGq4u2URja617jqtKkM71BVrkw)"
     )
     assert func(product_account) == expected
+
+
+def test_prices_property_not_loaded(product_account):
+    with pytest.raises(NotLoadedException):
+        product_account.prices
+
+
+def test_symbol_property(product_account):
+    assert product_account.symbol == "BCH/USD"
+
+
+def test_symbol_property_unknown(product_account, solana_client):
+    actual = PythProductAccount(
+        key=product_account.key,
+        solana=solana_client,
+    )
+    assert actual.symbol == "Unknown"
