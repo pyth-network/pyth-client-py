@@ -3,21 +3,12 @@ import pytest
 
 import pythclient.pythaccounts
 from pythclient.exceptions import NotLoadedException
-from pythclient.solana import SolanaPublicKey, SolanaClient
+from pythclient.solana import SolanaPublicKey
 from pythclient.pythaccounts import (
     _VERSION_2,
-    PythPriceAccount,
     PythProductAccount,
     _read_attribute_string,
 )
-
-
-@pytest.fixture
-def solana_client():
-    return SolanaClient(
-        endpoint="https://example.com",
-        ws_endpoint="wss://example.com",
-    )
 
 
 @pytest.fixture
