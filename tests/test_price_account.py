@@ -141,15 +141,14 @@ def price_account_bytes():
 
 
 @pytest.fixture
-def price_account_key():
-    return SolanaPublicKey("5ALDzwcRJfSyGdGyhP3kP628aqBNHZzLuVww7o9kdspe")
-
-
-def test_price_account(price_account_bytes, price_account_key, solana_client):
-    price_account = PythPriceAccount(
-        key=price_account_key,
+def price_account(solana_client):
+    return PythPriceAccount(
+        key=SolanaPublicKey("5ALDzwcRJfSyGdGyhP3kP628aqBNHZzLuVww7o9kdspe"),
         solana=solana_client,
     )
+
+
+def test_price_account_update_from(price_account_bytes, price_account):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
 
     assert price_account.price_type == PythPriceType.PRICE
@@ -171,8 +170,6 @@ def test_price_account(price_account_bytes, price_account_key, solana_client):
         "price": 707.125,
         "confidence_interval": 0.366305,
     }
-    assert price_account.min_publishers == 0
-
     # Only assert the first element of the 19 price components
     assert dict(price_account.price_components[0]) == {
         "publisher_key": SolanaPublicKey(
@@ -198,13 +195,10 @@ def test_price_account(price_account_bytes, price_account_key, solana_client):
         },
         "exponent": -8,
     }
+    assert price_account.min_publishers == 0
 
 
-def test_price_account_str(price_account_bytes, price_account_key, solana_client):
-    price_account = PythPriceAccount(
-        key=price_account_key,
-        solana=solana_client,
-    )
+def test_price_account_str(price_account_bytes, price_account, solana_client):
     expected_empty = "PythPriceAccount PythPriceType.UNKNOWN (5ALDzwcRJfSyGdGyhP3kP628aqBNHZzLuVww7o9kdspe)"
     assert str(price_account) == expected_empty
 
@@ -223,13 +217,15 @@ def test_price_account_str(price_account_bytes, price_account_key, solana_client
     assert str(price_account) == expected_with_product
 
 
-def test_price_account_agregate_properties(
-    price_account_bytes, price_account_key, solana_client
+def test_price_account_agregate_conf_interval(
+    price_account_bytes, price_account,
 ):
-    price_account = PythPriceAccount(
-        key=price_account_key,
-        solana=solana_client,
-    )
+    price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
+    assert price_account.aggregate_price_confidence_interval == 0.366305
+
+
+def test_price_account_agregate_price(
+    price_account_bytes, price_account,
+):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
     assert price_account.aggregate_price == 707.125
-    assert price_account.aggregate_price_confidence_interval == 0.366305
