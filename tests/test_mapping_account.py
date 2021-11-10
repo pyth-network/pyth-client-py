@@ -49,40 +49,29 @@ def entries():
 
 
 @pytest.fixture
-def mapping_key():
-    return SolanaPublicKey("AHtgzX45WTKfkPG53L6WYhGEXwQkN1BVknET3sVsLL8J")
-
-
-def test_mapping_account_upate_from(
-    solana_client, mapping_key, mapping_account_bytes, entries
-):
-    account = PythMappingAccount(
-        key=mapping_key,
+def mapping_account(solana_client):
+    return PythMappingAccount(
+        key=SolanaPublicKey("AHtgzX45WTKfkPG53L6WYhGEXwQkN1BVknET3sVsLL8J"),
         solana=solana_client,
     )
-    assert account.entries == []
-    assert account.next_account_key is None
 
-    account.update_from(
+
+def test_mapping_account_update_from(
+    solana_client, mapping_account, mapping_account_bytes, entries
+):
+    mapping_account.update_from(
         buffer=mapping_account_bytes,
         version=_VERSION_2,
         offset=0,
     )
 
-    assert account.entries == entries
-    assert account.next_account_key is None
+    assert mapping_account.entries == entries
+    assert mapping_account.next_account_key is None
 
 
 def test_mapping_account_upate_from_null_key(
-    solana_client, mapping_key, mapping_account_bytes, entries
+    solana_client, mapping_account, mapping_account_bytes, entries
 ):
-    account = PythMappingAccount(
-        key=mapping_key,
-        solana=solana_client,
-    )
-    assert account.entries == []
-    assert account.next_account_key is None
-
     # Replace the last key with a null key
     null_key_bytes = b"\0" * SolanaPublicKey.LENGTH
 
@@ -92,25 +81,20 @@ def test_mapping_account_upate_from_null_key(
     # Take the original bytes and add a null key to the end
     bad_bytes = mapping_account_bytes[:offset] + null_key_bytes
 
-    account.update_from(
+    mapping_account.update_from(
         buffer=bad_bytes,
         version=_VERSION_2,
         offset=0,
     )
 
     # The last key in the list is null, so remove it
-    expected = entries[: len(entries) - 1]
+    expected = entries[:-1]
 
-    assert account.entries == expected
-    assert account.next_account_key is None
+    assert mapping_account.entries == expected
+    assert mapping_account.next_account_key is None
 
 
-def test_mapping_account_str(mapping_key, solana_client):
-    actual = str(
-        PythMappingAccount(
-            key=mapping_key,
-            solana=solana_client,
-        )
-    )
-    expected = f"PythMappingAccount ({mapping_key})"
+def test_mapping_account_str(mapping_account, solana_client):
+    actual = str(mapping_account)
+    expected = f"PythMappingAccount ({mapping_account.key})"
     assert actual == expected
