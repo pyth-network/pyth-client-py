@@ -24,7 +24,7 @@ jobs:
         with:
           platforms: linux/amd64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/pyth-client-py:${{ GITHUB_SHA }} # should be tagged latest later on
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/pyth-client-py:latest
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
