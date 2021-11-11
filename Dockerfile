@@ -12,5 +12,4 @@ RUN apk add --no-cache python3-dev \
                        libc-dev \
                        && rm -rf /var/cache/apk/
 
-RUN pip3 install --no-cache-dir -r requirements.txt && \
-python setup.py install
+RUN python setup.py install
