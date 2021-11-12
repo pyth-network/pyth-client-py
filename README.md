@@ -3,6 +3,8 @@ Pyth Client in Python
 
 A Python library to retrieve data from Pyth account structures off the Solana blockchain.
 
+**NOTE**: This library requires Python 3.7 or greater due to `from __future__ import annotations`.
+
 
 Developer Setup
 ---------------

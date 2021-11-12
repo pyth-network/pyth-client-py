@@ -12,4 +12,5 @@ setup(
     extras_require={
         'testing': requirements + ['mock', 'pytest', 'pytest-cov', 'pytest-socket'],
     },
+    python_requires='>=3.7.0',
 )
