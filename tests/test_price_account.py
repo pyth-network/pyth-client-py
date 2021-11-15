@@ -1,4 +1,6 @@
 import pytest
+import base64
+from dataclasses import asdict
 
 from pythclient.pythaccounts import (
     PythPriceAccount,
@@ -6,149 +8,63 @@ from pythclient.pythaccounts import (
     PythPriceStatus,
     PythProductAccount,
 )
-from pythclient.solana import SolanaPublicKey
+from pythclient.solana import SolanaPublicKey, SolanaClient
 
 
 # Yes, this sucks, but it is actually a monster datastructure (2K)
 @pytest.fixture
 def price_account_bytes():
-    return bytes([
-        1, 0, 0, 0, 248, 255, 255, 255, 19, 0, 0, 0, 16, 0, 0, 0, 219,
-        169, 82, 6, 0, 0, 0, 0, 218, 169, 82, 6, 0, 0, 0, 0, 120, 92,
-        108, 119, 16, 0, 0, 0, 159, 58, 142, 201, 0, 0, 0, 0, 220, 33,
-        254, 28, 1, 0, 0, 0, 250, 57, 21, 3, 0, 0, 0, 0, 28, 243, 103,
-        147, 0, 0, 0, 0, 220, 33, 254, 28, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 72, 214, 3, 61, 115, 62, 39, 149,
-        12, 46, 3, 81, 226, 80, 84, 145, 205, 145, 84, 130, 79, 113,
-        109, 149, 19, 81, 76, 116, 185, 249, 143, 88, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 217, 169, 82, 6, 0, 0, 0, 0, 32, 31, 203, 118,
-        16, 0, 0, 0, 196, 42, 45, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 32, 31, 203, 118, 16, 0, 0, 0, 228, 239, 46, 2, 0, 0, 0, 0,
-        1, 0, 0, 0, 0, 0, 0, 0, 219, 169, 82, 6, 0, 0, 0, 0, 247, 102,
-        125, 187, 141, 124, 211, 23, 33, 137, 65, 74, 35, 194, 107, 82,
-        29, 140, 25, 198, 69, 4, 85, 85, 227, 226, 142, 130, 86, 142,
-        101, 120, 96, 88, 157, 118, 16, 0, 0, 0, 96, 16, 72, 1, 0, 0, 0,
-        0, 1, 0, 0, 0, 0, 0, 0, 0, 216, 169, 82, 6, 0, 0, 0, 0, 96, 88,
-        157, 118, 16, 0, 0, 0, 96, 16, 72, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-        0, 0, 0, 217, 169, 82, 6, 0, 0, 0, 0, 22, 15, 186, 193, 58, 247,
-        221, 216, 5, 211, 23, 10, 61, 224, 198, 189, 151, 18, 106, 30,
-        2, 192, 210, 89, 208, 168, 110, 248, 33, 214, 229, 199, 32, 31,
-        203, 118, 16, 0, 0, 0, 11, 37, 238, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-        0, 0, 0, 216, 169, 82, 6, 0, 0, 0, 0, 32, 31, 203, 118, 16, 0,
-        0, 0, 11, 37, 238, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 217,
-        169, 82, 6, 0, 0, 0, 0, 5, 210, 6, 79, 51, 28, 255, 221, 202,
-        190, 150, 250, 54, 85, 36, 221, 100, 244, 179, 134, 232, 133,
-        163, 77, 21, 44, 190, 174, 4, 44, 234, 245, 200, 28, 60, 113,
-        16, 0, 0, 0, 84, 1, 125, 4, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-        217, 169, 82, 6, 0, 0, 0, 0, 200, 28, 60, 113, 16, 0, 0, 0, 84,
-        1, 125, 4, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 218, 169, 82, 6,
-        0, 0, 0, 0, 226, 185, 143, 38, 144, 132, 212, 136, 5, 17, 200,
-        17, 93, 206, 240, 79, 83, 199, 226, 7, 153, 46, 3, 255, 209, 38,
-        223, 148, 77, 228, 219, 4, 64, 120, 135, 213, 13, 0, 0, 0, 64,
-        84, 137, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 215, 206, 58, 6,
-        0, 0, 0, 0, 64, 120, 135, 213, 13, 0, 0, 0, 64, 84, 137, 0, 0,
-        0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 215, 206, 58, 6, 0, 0, 0, 0,
-        26, 229, 2, 163, 233, 66, 184, 177, 28, 195, 116, 73, 107, 77,
-        156, 92, 57, 248, 12, 93, 172, 31, 69, 159, 53, 162, 14, 193,
-        184, 115, 8, 157, 208, 187, 67, 117, 16, 0, 0, 0, 112, 215, 93,
-        0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 216, 169, 82, 6, 0, 0, 0,
-        0, 208, 187, 67, 117, 16, 0, 0, 0, 112, 215, 93, 0, 0, 0, 0, 0,
-        1, 0, 0, 0, 0, 0, 0, 0, 217, 169, 82, 6, 0, 0, 0, 0, 13, 195,
-        188, 234, 145, 85, 105, 118, 8, 176, 95, 4, 167, 10, 208, 154,
-        65, 81, 114, 170, 155, 181, 247, 64, 135, 58, 192, 120, 43, 43,
-        26, 69, 128, 52, 253, 126, 16, 0, 0, 0, 232, 245, 166, 42, 0, 0,
-        0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 216, 169, 82, 6, 0, 0, 0, 0, 128,
-        52, 253, 126, 16, 0, 0, 0, 232, 245, 166, 42, 0, 0, 0, 0, 1, 0,
-        0, 0, 0, 0, 0, 0, 217, 169, 82, 6, 0, 0, 0, 0, 7, 242, 203, 57,
-        253, 176, 41, 220, 81, 120, 77, 40, 239, 23, 145, 29, 151, 193,
-        166, 156, 133, 114, 58, 27, 98, 85, 179, 66, 83, 67, 173, 117,
-        160, 226, 148, 120, 16, 0, 0, 0, 64, 120, 125, 1, 0, 0, 0, 0,
-        1, 0, 0, 0, 0, 0, 0, 0, 217, 169, 82, 6, 0, 0, 0, 0, 160, 226,
-        148, 120, 16, 0, 0, 0, 64, 120, 125, 1, 0, 0, 0, 0, 1, 0, 0, 0,
-        0, 0, 0, 0, 218, 169, 82, 6, 0, 0, 0, 0, 159, 62, 165, 123, 212,
-        9, 186, 0, 196, 13, 146, 174, 87, 19, 65, 194, 126, 60, 47, 126,
-        223, 172, 225, 194, 74, 81, 177, 161, 92, 49, 178, 183, 0, 126,
-        195, 118, 16, 0, 0, 0, 0, 144, 208, 3, 0, 0, 0, 0, 1, 0, 0, 0,
-        0, 0, 0, 0, 214, 169, 82, 6, 0, 0, 0, 0, 0, 126, 195, 118, 16,
-        0, 0, 0, 0, 144, 208, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-        214, 169, 82, 6, 0, 0, 0, 0, 67, 130, 143, 163, 97, 157, 166,
-        188, 174, 214, 137, 23, 222, 29, 124, 206, 146, 23, 222, 199,
-        43, 174, 18, 48, 99, 255, 123, 231, 221, 47, 150, 62, 159, 181,
-        99, 119, 16, 0, 0, 0, 32, 208, 252, 3, 0, 0, 0, 0, 1, 0, 0, 0,
-        0, 0, 0, 0, 216, 169, 82, 6, 0, 0, 0, 0, 159, 181, 99, 119, 16,
-        0, 0, 0, 208, 12, 252, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-        217, 169, 82, 6, 0, 0, 0, 0, 24, 131, 177, 36, 109, 218, 93,
-        7, 23, 61, 189, 56, 213, 103, 0, 7, 21, 132, 44, 31, 208, 232,
-        150, 231, 11, 10, 109, 210, 229, 26, 79, 151, 144, 137, 61, 122,
-        16, 0, 0, 0, 160, 126, 38, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
-        0, 212, 169, 82, 6, 0, 0, 0, 0, 144, 137, 61, 122, 16, 0, 0, 0,
-        160, 126, 38, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 212, 169,
-        82, 6, 0, 0, 0, 0, 67, 183, 120, 75, 111, 133, 102, 203, 50,
-        131, 101, 251, 206, 11, 64, 70, 21, 35, 186, 236, 231, 133, 23,
-        179, 21, 92, 49, 218, 163, 56, 41, 143, 160, 154, 172, 118, 16,
-        0, 0, 0, 224, 202, 212, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-        216, 169, 82, 6, 0, 0, 0, 0, 160, 154, 172, 118, 16, 0, 0, 0,
-        224, 202, 212, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 217, 169,
-        82, 6, 0, 0, 0, 0, 245, 157, 221, 239, 204, 22, 107, 45, 137,
-        164, 163, 204, 243, 254, 196, 187, 75, 152, 161, 81, 180, 192,
-        55, 255, 97, 94, 187, 120, 66, 227, 61, 117, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 169, 234, 211,
-        227, 211, 75, 204, 133, 52, 187, 44, 101, 14, 178, 122, 140,
-        140, 63, 26, 34, 214, 136, 40, 67, 40, 83, 140, 66, 168, 232,
-        35, 67, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 208, 202, 51, 28, 245, 217, 238, 113, 107, 200, 198,
-        144, 163, 0, 171, 168, 64, 59, 55, 20, 28, 182, 59, 2, 101, 192,
-        152, 192, 197, 142, 99, 172, 64, 201, 15, 119, 16, 0, 0, 0, 136,
-        239, 116, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 216, 169, 82,
-        6, 0, 0, 0, 0, 64, 201, 15, 119, 16, 0, 0, 0, 136, 239, 116, 2,
-        0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 217, 169, 82, 6, 0, 0, 0,
-        0, 95, 201, 100, 254, 33, 2, 195, 77, 93, 166, 252, 229, 65,
-        29, 127, 158, 185, 150, 131, 95, 215, 104, 121, 35, 237, 240,
-        7, 225, 234, 201, 211, 155, 32, 31, 203, 118, 16, 0, 0, 0, 240,
-        200, 210, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 216, 169, 82,
-        6, 0, 0, 0, 0, 32, 31, 203, 118, 16, 0, 0, 0, 240, 200, 210, 0,
-        0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 217, 169, 82, 6, 0, 0, 0,
-        0, 236, 134, 220, 52, 87, 253, 170, 21, 115, 40, 210, 64, 157,
-        52, 1, 211, 207, 173, 70, 128, 138, 176, 68, 25, 60, 30, 126,
-        201, 250, 213, 207, 98, 182, 181, 235, 121, 16, 0, 0, 0, 154,
-        18, 9, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 216, 169, 82, 6,
-        0, 0, 0, 0, 182, 181, 235, 121, 16, 0, 0, 0, 154, 18, 9, 3, 0,
-        0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 217, 169, 82, 6, 0, 0, 0, 0,
-        216, 111, 132, 13, 235, 226, 237, 166, 102, 133, 155, 248, 194,
-        199, 66, 195, 230, 71, 190, 78, 23, 109, 252, 82, 37, 216, 4,
-        241, 212, 159, 226, 45, 79, 113, 43, 118, 16, 0, 0, 0, 81, 0,
-        222, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 216, 169, 82, 6,
-        0, 0, 0, 0, 79, 113, 43, 118, 16, 0, 0, 0, 81, 0, 222, 1, 0, 0,
-        0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 217, 169, 82, 6, 0, 0, 0, 0, 247,
-        161, 48, 122, 139, 67, 39, 7, 240, 246, 215, 179, 231, 181, 3,
-        65, 69, 2, 98, 159, 30, 232, 249, 196, 246, 181, 145, 85, 137,
-        26, 36, 46, 217, 99, 81, 121, 16, 0, 0, 0, 132, 31, 32, 2, 0,
-        0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 216, 169, 82, 6, 0, 0, 0, 0,
-        217, 99, 81, 121, 16, 0, 0, 0, 132, 31, 32, 2, 0, 0, 0, 0, 1,
-        0, 0, 0, 0, 0, 0, 0, 217, 169, 82, 6, 0, 0, 0, 0, 16, 57, 177,
-        245, 250, 4, 188, 2, 13, 7, 120, 109, 84, 117, 4, 108, 217, 244,
-        11, 5, 110, 116, 96, 223, 36, 38, 142, 16, 0, 124, 14, 157, 159,
-        131, 52, 120, 16, 0, 0, 0, 97, 237, 72, 2, 0, 0, 0, 0, 1, 0, 0,
-        0, 0, 0, 0, 0, 216, 169, 82, 6, 0, 0, 0, 0, 159, 131, 52, 120,
-        16, 0, 0, 0, 97, 237, 72, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
-        0, 217, 169, 82, 6, 0, 0, 0, 0,
-    ])
+    return base64.b64decode((
+        b'AQAAAPj///8TAAAAEAAAANupUgYAAAAA2qlSBgAAAAB4XGx3EAAAAJ86jskAAAAA3CH+HAEA'
+        b'AAD6ORUDAAAAABzzZ5MAAAAA3CH+HAEAAAABAAAAAAAAAAAAAAAAAAAASNYDPXM+J5UMLgNR'
+        b'4lBUkc2RVIJPcW2VE1FMdLn5j1gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANmp'
+        b'UgYAAAAAIB/LdhAAAADEKi0CAAAAAAAAAAAAAAAAIB/LdhAAAADk7y4CAAAAAAEAAAAAAAAA'
+        b'26lSBgAAAAD3Zn27jXzTFyGJQUojwmtSHYwZxkUEVVXj4o6CVo5leGBYnXYQAAAAYBBIAQAA'
+        b'AAABAAAAAAAAANipUgYAAAAAYFiddhAAAABgEEgBAAAAAAEAAAAAAAAA2alSBgAAAAAWD7rB'
+        b'Ovfd2AXTFwo94Ma9lxJqHgLA0lnQqG74IdblxyAfy3YQAAAACyXuAAAAAAABAAAAAAAAANip'
+        b'UgYAAAAAIB/LdhAAAAALJe4AAAAAAAEAAAAAAAAA2alSBgAAAAAF0gZPMxz/3cq+lvo2VSTd'
+        b'ZPSzhuiFo00VLL6uBCzq9cgcPHEQAAAAVAF9BAAAAAABAAAAAAAAANmpUgYAAAAAyBw8cRAA'
+        b'AABUAX0EAAAAAAEAAAAAAAAA2qlSBgAAAADiuY8mkITUiAURyBFdzvBPU8fiB5kuA//RJt+U'
+        b'TeTbBEB4h9UNAAAAQFSJAAAAAAABAAAAAAAAANfOOgYAAAAAQHiH1Q0AAABAVIkAAAAAAAEA'
+        b'AAAAAAAA1846BgAAAAAa5QKj6UK4sRzDdElrTZxcOfgMXawfRZ81og7BuHMIndC7Q3UQAAAA'
+        b'cNddAAAAAAABAAAAAAAAANipUgYAAAAA0LtDdRAAAABw110AAAAAAAEAAAAAAAAA2alSBgAA'
+        b'AAANw7zqkVVpdgiwXwSnCtCaQVFyqpu190CHOsB4KysaRYA0/X4QAAAA6PWmKgAAAAABAAAA'
+        b'AAAAANipUgYAAAAAgDT9fhAAAADo9aYqAAAAAAEAAAAAAAAA2alSBgAAAAAH8ss5/bAp3FF4'
+        b'TSjvF5Edl8GmnIVyOhtiVbNCU0OtdaDilHgQAAAAQHh9AQAAAAABAAAAAAAAANmpUgYAAAAA'
+        b'oOKUeBAAAABAeH0BAAAAAAEAAAAAAAAA2qlSBgAAAACfPqV71Am6AMQNkq5XE0HCfjwvft+s'
+        b'4cJKUbGhXDGytwB+w3YQAAAAAJDQAwAAAAABAAAAAAAAANapUgYAAAAAAH7DdhAAAAAAkNAD'
+        b'AAAAAAEAAAAAAAAA1qlSBgAAAABDgo+jYZ2mvK7WiRfeHXzOkhfexyuuEjBj/3vn3S+WPp+1'
+        b'Y3cQAAAAIND8AwAAAAABAAAAAAAAANipUgYAAAAAn7VjdxAAAADQDPwDAAAAAAEAAAAAAAAA'
+        b'2alSBgAAAAAYg7EkbdpdBxc9vTjVZwAHFYQsH9DolucLCm3S5RpPl5CJPXoQAAAAoH4mAQAA'
+        b'AAABAAAAAAAAANSpUgYAAAAAkIk9ehAAAACgfiYBAAAAAAEAAAAAAAAA1KlSBgAAAABDt3hL'
+        b'b4VmyzKDZfvOC0BGFSO67OeFF7MVXDHaozgpj6CarHYQAAAA4MrUAgAAAAABAAAAAAAAANip'
+        b'UgYAAAAAoJqsdhAAAADgytQCAAAAAAEAAAAAAAAA2alSBgAAAAD1nd3vzBZrLYmko8zz/sS7'
+        b'S5ihUbTAN/9hXrt4QuM9dQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+        b'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACp6tPj00vMhTS7LGUOsnqMjD8aItaIKEMoU4xC'
+        b'qOgjQwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+        b'AAAAAAAAAAAAAAAAAADQyjMc9dnucWvIxpCjAKuoQDs3FBy2OwJlwJjAxY5jrEDJD3cQAAAA'
+        b'iO90AgAAAAABAAAAAAAAANipUgYAAAAAQMkPdxAAAACI73QCAAAAAAEAAAAAAAAA2alSBgAA'
+        b'AABfyWT+IQLDTV2m/OVBHX+euZaDX9doeSPt8Afh6snTmyAfy3YQAAAA8MjSAAAAAAABAAAA'
+        b'AAAAANipUgYAAAAAIB/LdhAAAADwyNIAAAAAAAEAAAAAAAAA2alSBgAAAADshtw0V/2qFXMo'
+        b'0kCdNAHTz61GgIqwRBk8Hn7J+tXPYra163kQAAAAmhIJAwAAAAABAAAAAAAAANipUgYAAAAA'
+        b'trXreRAAAACaEgkDAAAAAAEAAAAAAAAA2alSBgAAAADYb4QN6+LtpmaFm/jCx0LD5ke+Thdt'
+        b'/FIl2ATx1J/iLU9xK3YQAAAAUQDeAQAAAAABAAAAAAAAANipUgYAAAAAT3ErdhAAAABRAN4B'
+        b'AAAAAAEAAAAAAAAA2alSBgAAAAD3oTB6i0MnB/D217PntQNBRQJinx7o+cT2tZFViRokLtlj'
+        b'UXkQAAAAhB8gAgAAAAABAAAAAAAAANipUgYAAAAA2WNReRAAAACEHyACAAAAAAEAAAAAAAAA'
+        b'2alSBgAAAAAQObH1+gS8Ag0HeG1UdQRs2fQLBW50YN8kJo4QAHwOnZ+DNHgQAAAAYe1IAgAA'
+        b'AAABAAAAAAAAANipUgYAAAAAn4M0eBAAAABh7UgCAAAAAAEAAAAAAAAA2alSBgAAAAA='
+    ))
 
 
 @pytest.fixture
-def price_account(solana_client):
+def price_account(solana_client: SolanaClient) -> PythPriceAccount:
     return PythPriceAccount(
         key=SolanaPublicKey("5ALDzwcRJfSyGdGyhP3kP628aqBNHZzLuVww7o9kdspe"),
         solana=solana_client,
     )
 
 
-def test_price_account_update_from(price_account_bytes, price_account):
+def test_price_account_update_from(price_account_bytes: bytes, price_account: PythPriceAccount):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
 
     assert price_account.price_type == PythPriceType.PRICE
@@ -161,7 +77,7 @@ def test_price_account_update_from(price_account_bytes, price_account):
         "5uKdRzB3FzdmwyCHrqSGq4u2URja617jqtKkM71BVrkw"
     )
     assert price_account.next_price_account_key is None
-    assert dict(price_account.aggregate_price_info) == {
+    assert asdict(price_account.aggregate_price_info) == {
         "raw_price": 70712500000,
         "raw_confidence_interval": 36630500,
         "price_status": PythPriceStatus.TRADING,
@@ -171,7 +87,7 @@ def test_price_account_update_from(price_account_bytes, price_account):
         "confidence_interval": 0.366305,
     }
     # Only assert the first element of the 19 price components
-    assert dict(price_account.price_components[0]) == {
+    assert asdict(price_account.price_components[0]) == {
         "publisher_key": SolanaPublicKey(
             "HekM1hBawXQu6wK6Ah1yw1YXXeMUDD2bfCHEzo25vnEB"
         ),
@@ -198,7 +114,9 @@ def test_price_account_update_from(price_account_bytes, price_account):
     assert price_account.min_publishers == 0
 
 
-def test_price_account_str(price_account_bytes, price_account, solana_client):
+def test_price_account_str(
+        price_account_bytes: bytes, price_account: PythPriceAccount, solana_client: SolanaClient,
+):
     expected_empty = "PythPriceAccount PythPriceType.UNKNOWN (5ALDzwcRJfSyGdGyhP3kP628aqBNHZzLuVww7o9kdspe)"
     assert str(price_account) == expected_empty
 
@@ -207,25 +125,27 @@ def test_price_account_str(price_account_bytes, price_account, solana_client):
     assert str(price_account) == expected
 
     price_account.product = PythProductAccount(
-        key="5uKdRzB3FzdmwyCHrqSGq4u2URja617jqtKkM71BVrkw",
+        key=SolanaPublicKey("5uKdRzB3FzdmwyCHrqSGq4u2URja617jqtKkM71BVrkw"),
         solana=solana_client,
     )
     price_account.product.attrs = {
         "symbol": "FOO/BAR",
     }
-    expected_with_product = "PythPriceAccount FOO/BAR PythPriceType.PRICE (5ALDzwcRJfSyGdGyhP3kP628aqBNHZzLuVww7o9kdspe)"
+    expected_with_product = (
+        "PythPriceAccount FOO/BAR PythPriceType.PRICE (5ALDzwcRJfSyGdGyhP3kP628aqBNHZzLuVww7o9kdspe)"
+    )
     assert str(price_account) == expected_with_product
 
 
 def test_price_account_agregate_conf_interval(
-    price_account_bytes, price_account,
+    price_account_bytes: bytes, price_account: PythPriceAccount,
 ):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
     assert price_account.aggregate_price_confidence_interval == 0.366305
 
 
 def test_price_account_agregate_price(
-    price_account_bytes, price_account,
+    price_account_bytes: bytes, price_account: PythPriceAccount,
 ):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
     assert price_account.aggregate_price == 707.125

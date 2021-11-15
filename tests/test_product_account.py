@@ -1,9 +1,11 @@
 import mock
+import base64
 import pytest
+from typing import Callable, Optional, Tuple
 
 import pythclient.pythaccounts
 from pythclient.exceptions import NotLoadedException
-from pythclient.solana import SolanaPublicKey
+from pythclient.solana import SolanaPublicKey, SolanaClient
 from pythclient.pythaccounts import (
     _VERSION_2,
     PythProductAccount,
@@ -12,26 +14,17 @@ from pythclient.pythaccounts import (
 
 
 @pytest.fixture
-def product_account_bytes():
-    return bytes(
-        [
-            61, 210, 182, 54, 134, 164, 80, 236, 114, 144, 223, 58, 30,
-            11, 88, 60, 4, 129, 246, 81, 53, 30, 223, 167, 99, 111, 57, 174,
-            213, 92, 248, 163, 10, 97, 115, 115, 101, 116, 95, 116, 121,
-            112, 101, 6, 67, 114, 121, 112, 116, 111, 6, 115, 121, 109, 98,
-            111, 108, 7, 66, 67, 72, 47, 85, 83, 68, 7, 99, 111, 117, 110,
-            116, 114, 121, 2, 85, 83, 14, 113, 117, 111, 116, 101, 95, 99,
-            117, 114, 114, 101, 110, 99, 121, 3, 85, 83, 68, 11, 100, 101,
-            115, 99, 114, 105, 112, 116, 105, 111, 110, 7, 66, 67, 72, 47,
-            85, 83, 68, 5, 116, 101, 110, 111, 114, 4, 83, 112, 111, 116,
-            14, 103, 101, 110, 101, 114, 105, 99, 95, 115, 121, 109, 98,
-            111, 108, 6, 66, 67, 72, 85, 83, 68
-        ]
-    )
+def product_account_bytes() -> bytes:
+    # Manually split up base64 encoded str for readability
+    return base64.b64decode((
+        b'PdK2NoakUOxykN86HgtYPASB9lE1Ht+nY285rtVc+KMKYXNzZXRfdHlwZQZDcnlw'
+        b'dG8Gc3ltYm9sB0JDSC9VU0QHY291bnRyeQJVUw5xdW90ZV9jdXJyZW5jeQNVU0QL'
+        b'ZGVzY3JpcHRpb24HQkNIL1VTRAV0ZW5vcgRTcG90DmdlbmVyaWNfc3ltYm9sBkJDSFVTRA=='
+    ))
 
 
 @pytest.fixture
-def product_account(solana_client):
+def product_account(solana_client: SolanaClient):
     product_account = PythProductAccount(
         key=SolanaPublicKey("5uKdRzB3FzdmwyCHrqSGq4u2URja617jqtKkM71BVrkw"),
         solana=solana_client,
@@ -52,7 +45,7 @@ def product_account(solana_client):
 
 
 def test_product_account_update_from(
-    product_account, product_account_bytes, solana_client
+    product_account: PythProductAccount, product_account_bytes: bytes, solana_client: SolanaClient
 ):
     actual = PythProductAccount(
         key=product_account.key,
@@ -66,7 +59,7 @@ def test_product_account_update_from(
 
 
 def test_update_from_null_first_price_account_key(
-    product_account, product_account_bytes, solana_client
+    product_account: PythProductAccount, product_account_bytes: bytes, solana_client: SolanaClient
 ):
     actual = PythProductAccount(
         key=product_account.key,
@@ -86,14 +79,14 @@ def test_update_from_null_first_price_account_key(
 
 
 def test_product_account_update_from_invalid_attr_key(
-    product_account, product_account_bytes, solana_client
+    product_account: PythProductAccount, product_account_bytes: bytes, solana_client: SolanaClient
 ):
     actual = PythProductAccount(
         key=product_account.key,
         solana=solana_client,
     )
 
-    def fake_read_attribute_string(buffer: bytes, offset: int):
+    def fake_read_attribute_string(buffer: bytes, offset: int) -> Tuple[Optional[str], str]:
         results = _read_attribute_string(buffer, offset)
         if results[0] == "generic_symbol":
             return (None, results[1])
@@ -111,14 +104,14 @@ def test_product_account_update_from_invalid_attr_key(
 
 
 @pytest.mark.parametrize("func", [str, repr])
-def test_human_readable(func, product_account):
+def test_human_readable(func: Callable, product_account: PythProductAccount):
     expected = (
         "PythProductAccount BCH/USD (5uKdRzB3FzdmwyCHrqSGq4u2URja617jqtKkM71BVrkw)"
     )
     assert func(product_account) == expected
 
 
-def test_prices_property_not_loaded(product_account):
+def test_prices_property_not_loaded(product_account: PythProductAccount):
     with pytest.raises(NotLoadedException):
         product_account.prices
 
@@ -127,7 +120,7 @@ def test_symbol_property(product_account):
     assert product_account.symbol == "BCH/USD"
 
 
-def test_symbol_property_unknown(product_account, solana_client):
+def test_symbol_property_unknown(product_account: PythProductAccount, solana_client: SolanaClient):
     actual = PythProductAccount(
         key=product_account.key,
         solana=solana_client,

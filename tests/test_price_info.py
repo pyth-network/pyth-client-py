@@ -1,5 +1,7 @@
 import pytest
+import base64
 from pythclient.pythaccounts import PythPriceStatus, PythPriceInfo
+from dataclasses import asdict
 
 
 @pytest.fixture
@@ -15,10 +17,7 @@ def price_info_trading():
 
 @pytest.fixture
 def price_info_trading_bytes():
-    return bytes([
-        16, 161, 251, 224, 13, 0, 0, 0, 100, 83, 145, 2, 0, 0,
-        0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 65, 200, 71, 6, 0, 0, 0, 0,
-    ])
+    return base64.b64decode(b'EKH74A0AAABkU5ECAAAAAAEAAAAAAAAAQchHBgAAAAA=')
 
 
 @pytest.mark.parametrize(
@@ -55,7 +54,7 @@ class TestPythPriceInfo:
             slot=slot,
             exponent=exponent,
         )
-        for key, actual_value in dict(actual).items():
+        for key, actual_value in asdict(actual).items():
             assert actual_value == locals().get(key), f"'{key}' mismatch"
 
     def test_price_info_iter(
@@ -68,7 +67,7 @@ class TestPythPriceInfo:
         price,
         confidence_interval,
     ):
-        actual = dict(
+        actual = asdict(
             PythPriceInfo(
                 raw_price=raw_price,
                 raw_confidence_interval=raw_confidence_interval,
@@ -95,7 +94,7 @@ def test_price_info_deserialise(price_info_trading, price_info_trading_bytes):
         offset=0,
         exponent=price_info_trading.exponent,
     )
-    assert dict(actual) == dict(price_info_trading)
+    assert asdict(actual) == asdict(price_info_trading)
 
 
 def test_price_info_str(price_info_trading):

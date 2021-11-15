@@ -1,3 +1,4 @@
+import base64
 import pytest
 
 from pythclient.pythaccounts import PythMappingAccount, _VERSION_2
@@ -20,23 +21,14 @@ def mapping_account_bytes():
 
     Render those into a pasteable form with:
 
-        print(list(product_account_bytes))
+        print(base64.b6encode(product_account_bytes))
 
     """
-    return bytes(
-        [
-            3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            72, 214, 3, 61, 115, 62, 39, 149, 12, 46, 3, 81, 226, 80,
-            84, 145, 205, 145, 84, 130, 79, 113, 109, 149, 19, 81, 76,
-            116, 185, 249, 143, 88, 200, 12, 11, 20, 138, 186, 153, 75,
-            37, 102, 234, 84, 167, 143, 240, 142, 250, 61, 94, 14, 195,
-            208, 206, 234, 12, 250, 160, 63, 236, 37, 238, 162, 53, 21,
-            179, 134, 30, 143, 233, 62, 95, 84, 11, 164, 7, 124, 33,
-            100, 4, 120, 43, 134, 213, 231, 128, 119, 179, 203, 253,
-            39, 49, 58, 179, 188
-        ]
-    )
+    return base64.b64decode((
+        b'AwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEjWAz1zPieVDC4DUeJQVJHNkVSCT3FtlRNRT'
+        b'HS5+Y9YyAwLFIq6mUslZupUp4/wjvo9Xg7D0M7qDPqgP+wl7qI1FbOGHo/pPl9UC6QHfCFkBHgrhtXngHezy/0nMT'
+        b'qzvA=='
+    ))
 
 
 @pytest.fixture
