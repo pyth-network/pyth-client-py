@@ -10,7 +10,8 @@ setup(
     author_email='contact@pyth.network',
     install_requires=requirements,
     extras_require={
-        'testing': requirements + ['mock', 'pytest', 'pytest-cov', 'pytest-socket'],
+        'testing': requirements + ['mock', 'pytest', 'pytest-cov', 'pytest-socket',
+                                   'pytest-mock', 'pytest-asyncio'],
     },
     python_requires='>=3.7.0',
 )
