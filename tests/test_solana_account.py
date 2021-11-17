@@ -1,18 +1,21 @@
+from _pytest.logging import LogCaptureFixture
 import pytest
+
+from pytest_mock import MockerFixture
 
 from mock import AsyncMock
 
 
-from pythclient.solana import SolanaAccount, SolanaPublicKey
+from pythclient.solana import SolanaAccount, SolanaPublicKey, SolanaClient
 
 
 @pytest.fixture
-def solana_pubkey():
+def solana_pubkey() -> SolanaPublicKey:
     return SolanaPublicKey("AHtgzX45WTKfkPG53L6WYhGEXwQkN1BVknET3sVsLL8J")
 
 
 @pytest.fixture
-def solana_account(solana_pubkey, solana_client):
+def solana_account(solana_pubkey: SolanaPublicKey, solana_client: SolanaClient) -> SolanaAccount:
     return SolanaAccount(
         key=solana_pubkey,
         solana=solana_client,
@@ -20,15 +23,15 @@ def solana_account(solana_pubkey, solana_client):
 
 
 @pytest.fixture()
-def mock_get_account_info(mocker):
+def mock_get_account_info(mocker: MockerFixture) -> AsyncMock:
     async_mock = AsyncMock()
     mocker.patch('pythclient.solana.SolanaClient.get_account_info', side_effect=async_mock)
     return async_mock
 
 
 def test_solana_account_update_with_rpc_response(
-    solana_pubkey, solana_client
-):
+    solana_pubkey: SolanaPublicKey, solana_client: SolanaClient
+) -> None:
     actual = SolanaAccount(
         key=solana_pubkey,
         solana=solana_client,
@@ -48,7 +51,8 @@ def test_solana_account_update_with_rpc_response(
 
 
 @pytest.mark.asyncio
-async def test_solana_account_update_success(mock_get_account_info, solana_pubkey, solana_client):
+async def test_solana_account_update_success(mock_get_account_info: AsyncMock,
+                                             solana_pubkey: SolanaPublicKey, solana_client: SolanaClient) -> None:
     actual = SolanaAccount(
         key=solana_pubkey,
         solana=solana_client,
@@ -62,7 +66,10 @@ async def test_solana_account_update_success(mock_get_account_info, solana_pubke
 
 
 @pytest.mark.asyncio
-async def test_solana_account_update_fail(mock_get_account_info, caplog, solana_pubkey, solana_client):
+async def test_solana_account_update_fail(mock_get_account_info: AsyncMock,
+                                          caplog: LogCaptureFixture,
+                                          solana_pubkey: SolanaPublicKey,
+                                          solana_client: SolanaClient) -> None:
     actual = SolanaAccount(
         key=solana_pubkey,
         solana=solana_client,
@@ -74,7 +81,10 @@ async def test_solana_account_update_fail(mock_get_account_info, caplog, solana_
 
 
 @pytest.mark.asyncio
-async def test_solana_account_update_null(mock_get_account_info, caplog, solana_pubkey, solana_client):
+async def test_solana_account_update_null(mock_get_account_info: AsyncMock,
+                                          caplog: LogCaptureFixture,
+                                          solana_pubkey: SolanaPublicKey,
+                                          solana_client: SolanaClient) -> None:
     actual = SolanaAccount(
         key=solana_pubkey,
         solana=solana_client,
@@ -86,7 +96,7 @@ async def test_solana_account_update_null(mock_get_account_info, caplog, solana_
     assert exc_message in caplog.text
 
 
-def test_solana_account_str(solana_account):
+def test_solana_account_str(solana_account: SolanaAccount) -> None:
     actual = str(solana_account)
     expected = f"SolanaAccount ({solana_account.key})"
     assert actual == expected
