@@ -12,8 +12,11 @@ def solana_client():
         ws_endpoint="wss://example.com",
     )
 
+
 @pytest.fixture
 def caplog(_caplog):
+    logger.enable("pythclient")
+
     class PropogateHandler(logging.Handler):
         def emit(self, record):
             logging.getLogger(record.name).handle(record)
