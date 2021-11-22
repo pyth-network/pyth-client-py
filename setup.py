@@ -1,6 +1,6 @@
 from setuptools import setup
 
-requirements = ['aiodns', 'aiohttp', 'backoff', 'base58', 'loguru']
+requirements = ['aiodns', 'aiohttp>=3.7.4', 'backoff', 'base58', 'loguru']
 
 setup(
     name='pythclient',
