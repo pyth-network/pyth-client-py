@@ -1,6 +1,8 @@
 Pyth Client in Python
 =====================
 
+[![pytest](https://github.com/pyth-network/pyth-client-py/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/pyth-network/pyth-client-py/actions/workflows/pytest.yml)
+
 A Python library to retrieve data from Pyth account structures off the Solana blockchain.
 
 **NOTE**: This library requires Python 3.7 or greater due to `from __future__ import annotations`.
