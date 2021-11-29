@@ -6,7 +6,7 @@ from pythclient.pythaccounts import (
     _ACCOUNT_HEADER_BYTES, _VERSION_2, PythMappingAccount, PythPriceType, PythProductAccount, PythPriceAccount
 )
 
-from pythclient.pythclient import PythClient, V2_FIRST_MAPPING_ACCOUNT_KEY, V2_PROGRAM_KEY
+from pythclient.pythclient import PythClient, V2_FIRST_MAPPING_ACCOUNT_KEY, V2_PROGRAM_KEY, WatchSession
 from pythclient.solana import (
     SOLANA_DEVNET_HTTP_ENDPOINT,
     SOLANA_DEVNET_WS_ENDPOINT,
@@ -175,6 +175,21 @@ def pyth_client(solana_client: SolanaClient) -> PythClient:
 
 
 @ pytest.fixture
+def pyth_client_no_program_key(solana_client: SolanaClient) -> PythClient:
+    return PythClient(
+        solana_client=solana_client,
+        solana_endpoint=SOLANA_DEVNET_HTTP_ENDPOINT,
+        solana_ws_endpoint=SOLANA_DEVNET_WS_ENDPOINT,
+        first_mapping_account_key=V2_FIRST_MAPPING_ACCOUNT_KEY
+    )
+
+
+@ pytest.fixture
+def watch_session(solana_client: SolanaClient) -> WatchSession:
+    return WatchSession(solana_client)
+
+
+@ pytest.fixture
 def mapping_account(solana_client: SolanaClient) -> PythMappingAccount:
     mapping_account = PythMappingAccount(
         key=SolanaPublicKey(V2_FIRST_MAPPING_ACCOUNT_KEY),
@@ -259,6 +274,15 @@ async def test_get_products(
         assert products[i].key == product_account.key
 
 
+def test_get_ratelimit(
+    pyth_client: PythClient,
+) -> None:
+    ratelimit = pyth_client.solana_ratelimit
+    assert ratelimit._get_overall_interval() == 0
+    assert ratelimit._get_method_interval() == 0
+    assert ratelimit._get_connection_interval() == 0
+
+
 @pytest.mark.asyncio
 async def test_get_mapping_accounts(
     pyth_client: PythClient,
@@ -333,3 +357,22 @@ async def test_refresh_all_prices(
         assert account.valid_slot == 96878110
         assert account.product_account_key == product_account.key
         assert account.next_price_account_key is None
+
+
+@ pytest.mark.asyncio
+async def test_refresh_all_prices_no_program_key(
+    pyth_client_no_program_key: PythClient,
+    mock_get_account_info: AsyncMock,
+) -> None:
+    await pyth_client_no_program_key.refresh_all_prices()
+    for product in pyth_client_no_program_key.products:
+        with pytest.raises(NotLoadedException):
+            product.prices
+
+
+def test_create_watch_session(
+    pyth_client: PythClient,
+    watch_session: WatchSession
+) -> None:
+    ws = pyth_client.create_watch_session()
+    assert ws._next_subid() == watch_session._next_subid()
