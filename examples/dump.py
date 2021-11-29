@@ -10,9 +10,9 @@ from typing import List, Any
 from loguru import logger
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pythclient.pythclient import PythClient, V2_PROGRAM_KEY, V2_FIRST_MAPPING_ACCOUNT_KEY
-from pythclient.ratelimit import RateLimit
-from pythclient.pythaccounts import PythPriceAccount
+from pythclient.pythclient import PythClient, V2_PROGRAM_KEY, V2_FIRST_MAPPING_ACCOUNT_KEY  # noqa
+from pythclient.ratelimit import RateLimit  # noqa
+from pythclient.pythaccounts import PythPriceAccount  # noqa
 
 logger.enable("pythclient")
 
@@ -32,7 +32,10 @@ signal.signal(signal.SIGINT, set_to_exit)
 async def main():
     global to_exit
     use_program = len(sys.argv) >= 2 and sys.argv[1] == "program"
-    async with PythClient(first_mapping_account_key=V2_FIRST_MAPPING_ACCOUNT_KEY, program_key=V2_PROGRAM_KEY if use_program else None) as c:
+    async with PythClient(
+        first_mapping_account_key=V2_FIRST_MAPPING_ACCOUNT_KEY,
+        program_key=V2_PROGRAM_KEY if use_program else None,
+    ) as c:
         await c.refresh_all_prices()
         products = await c.get_products()
         all_prices: List[PythPriceAccount] = []
@@ -82,8 +85,6 @@ async def main():
                             pr.aggregate_price_confidence_interval,
                         )
                         break
-                    else:
-                        print("WTF!: ", price)
 
         print("Unsubscribing...")
         if use_program:
