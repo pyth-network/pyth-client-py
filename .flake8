@@ -1,0 +1,3 @@
+[flake8]
+# Seriously, we don't develop software on 80 character terminals anymore.
+max-line-length = 127
