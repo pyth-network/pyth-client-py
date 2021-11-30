@@ -20,7 +20,7 @@ def solana_pubkey():
 
 
 @pytest.fixture
-def pyth_account(solana_pubkey, solana_client):
+def pyth_account(solana_pubkey: SolanaPublicKey, solana_client: SolanaClient) -> PythAccount:
     return PythAccount(
         key=solana_pubkey,
         solana=solana_client,
