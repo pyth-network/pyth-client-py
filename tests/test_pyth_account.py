@@ -6,17 +6,26 @@ from pythclient.solana import SolanaClient, SolanaPublicKey
 from pythclient.pythaccounts import PythAccount, PythAccountType, PythProductAccount
 
 
-BCH_PRODUCT_ACCOUNT_KEY_DEVNET = '89GseEmvNkzAMMEXcW9oTYzqRPXTsJ3BmNerXmgA1osV'
-BCH_PRICE_ACCOUNT_KEY_DEVNET = '4EQrNZYk5KR1RnjyzbaaRbHsv8VqZWzSUtvx58wLsZbj'
-
-PRODUCT_ACCOUNT_B64_DATA = ('1MOyoQIAAAACAAAAlwAAADAClHlZh5cpDjY4oXEsKb3iNn0OynlPd4sltaRy8ZLeBnN5bWJvbAdCQ0gv'
-                            'VVNECmFzc2V0X3R5cGUGQ3J5cHRvDnF1b3RlX2N1cnJlbmN5A1VTRAtkZXNjcmlwdGlvbgdCQ0gvVVNE'
-                            'DmdlbmVyaWNfc3ltYm9sBkJDSFVTRARiYXNlA0JDSA==')
+@pytest.fixture
+def solana_pubkey() -> SolanaPublicKey:
+    return SolanaPublicKey("AHtgzX45WTKfkPG53L6WYhGEXwQkN1BVknET3sVsLL8J")
 
 
 @pytest.fixture
-def solana_pubkey():
-    return SolanaPublicKey("AHtgzX45WTKfkPG53L6WYhGEXwQkN1BVknET3sVsLL8J")
+def product_account_pubkey() -> SolanaPublicKey:
+    return SolanaPublicKey("89GseEmvNkzAMMEXcW9oTYzqRPXTsJ3BmNerXmgA1osV")
+
+
+@pytest.fixture
+def price_account_pubkey() -> SolanaPublicKey:
+    return SolanaPublicKey("4EQrNZYk5KR1RnjyzbaaRbHsv8VqZWzSUtvx58wLsZbj")
+
+
+@pytest.fixture
+def product_account_b64() -> str:
+    return ('1MOyoQIAAAACAAAAlwAAADAClHlZh5cpDjY4oXEsKb3iNn0OynlPd4sltaRy8ZLeBnN5bWJvbAdCQ0gv'
+            'VVNECmFzc2V0X3R5cGUGQ3J5cHRvDnF1b3RlX2N1cnJlbmN5A1VTRAtkZXNjcmlwdGlvbgdCQ0gvVVNE'
+            'DmdlbmVyaWNfc3ltYm9sBkJDSFVTRARiYXNlA0JDSA==')
 
 
 @pytest.fixture
@@ -28,9 +37,11 @@ def pyth_account(solana_pubkey: SolanaPublicKey, solana_client: SolanaClient) ->
 
 
 @ pytest.fixture
-def product_account(solana_client: SolanaClient) -> PythProductAccount:
+def product_account(solana_client: SolanaClient,
+                    product_account_pubkey: SolanaPublicKey,
+                    price_account_pubkey: SolanaPublicKey) -> PythProductAccount:
     product_account = PythProductAccount(
-        key=SolanaPublicKey(BCH_PRODUCT_ACCOUNT_KEY_DEVNET),
+        key=product_account_pubkey,
         solana=solana_client,
     )
     product_account.slot = 96866599
@@ -42,15 +53,14 @@ def product_account(solana_client: SolanaClient) -> PythProductAccount:
         'generic_symbol': 'BCHUSD',
         'base': 'BCH'
     }
-    product_account.first_price_account_key = SolanaPublicKey(
-        BCH_PRICE_ACCOUNT_KEY_DEVNET,
-    )
+    product_account.first_price_account_key = price_account_pubkey
     return product_account
 
 
 def test_product_account_update_with_rpc_response_with_data(
     solana_client: SolanaClient,
-    product_account: PythProductAccount
+    product_account: PythProductAccount,
+    product_account_b64: str
 ):
     actual = PythProductAccount(
         key=product_account.key,
@@ -62,7 +72,7 @@ def test_product_account_update_with_rpc_response_with_data(
     value = {
         'lamports': 1000000000,
         'data': [
-            PRODUCT_ACCOUNT_B64_DATA,
+            product_account_b64,
             'base64'
         ]
     }
@@ -78,13 +88,14 @@ def test_product_account_update_with_rpc_response_with_data(
 
 def test_pyth_account_update_with_rpc_response_wrong_type(
     pyth_account: PythAccount,
-    caplog: LogCaptureFixture
+    caplog: LogCaptureFixture,
+    product_account_b64: str
 ):
     slot = 96866600
     value = {
         'lamports': 1000000000,
         'data': [
-            PRODUCT_ACCOUNT_B64_DATA,
+            product_account_b64,
             'base64'
         ]
     }
