@@ -167,8 +167,8 @@ def get_program_accounts_resp(key: SolanaPublicKeyOrStr,
 def pyth_client(solana_client: SolanaClient) -> PythClient:
     return PythClient(
         solana_client=solana_client,
-        solana_endpoint=SOLANA_DEVNET_HTTP_ENDPOINT,
-        solana_ws_endpoint=SOLANA_DEVNET_WS_ENDPOINT,
+        solana_endpoint="http://example.com",
+        solana_ws_endpoint="ws://example.com",
         first_mapping_account_key=V2_FIRST_MAPPING_ACCOUNT_KEY,
         program_key=V2_PROGRAM_KEY
     )
