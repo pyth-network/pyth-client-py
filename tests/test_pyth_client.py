@@ -8,8 +8,6 @@ from pythclient.pythaccounts import (
 
 from pythclient.pythclient import PythClient, V2_FIRST_MAPPING_ACCOUNT_KEY, V2_PROGRAM_KEY, WatchSession
 from pythclient.solana import (
-    SOLANA_DEVNET_HTTP_ENDPOINT,
-    SOLANA_DEVNET_WS_ENDPOINT,
     SolanaClient,
     SolanaCommitment,
     SolanaPublicKey,
@@ -282,6 +280,11 @@ def test_get_ratelimit(
     assert ratelimit._get_method_interval() == 0
     assert ratelimit._get_connection_interval() == 0
 
+    ratelimit.configure(overall_cps=1, method_cps=1, connection_cps=1)
+    assert ratelimit._get_overall_interval() == 1.0
+    assert ratelimit._get_method_interval() == 1.0
+    assert ratelimit._get_connection_interval() == 1.0
+
 
 @pytest.mark.asyncio
 async def test_get_mapping_accounts(
@@ -319,22 +322,18 @@ async def test_get_all_accounts(
             price.update_from(buffer=price_account_bytes, version=_VERSION_2)
 
     accounts = await pyth_client.get_all_accounts()
-    for account in accounts:
-        if isinstance(account, PythMappingAccount):
-            assert account.key == mapping_account.key
-            assert account.entries == mapping_account_entries
-        elif isinstance(account, PythProductAccount):
-            assert dict(account) == dict(product_account)
-        elif isinstance(account, PythPriceAccount):
-            assert account.key == price_account.key
-            assert account.price_type == PythPriceType.PRICE
-            assert account.exponent == -9
-            assert account.num_components == 27
-            assert len(account.price_components) == account.num_components
-            assert account.last_slot == 96878111
-            assert account.valid_slot == 96878110
-            assert account.product_account_key == product_account.key
-            assert account.next_price_account_key is None
+    assert accounts[0].key == mapping_account.key
+    assert accounts[0].entries == mapping_account_entries
+    assert dict(accounts[1]) == dict(product_account)
+    assert accounts[2].key == price_account.key
+    assert accounts[2].price_type == PythPriceType.PRICE
+    assert accounts[2].exponent == -9
+    assert accounts[2].num_components == 27
+    assert len(accounts[2].price_components) == accounts[2].num_components
+    assert accounts[2].last_slot == 96878111
+    assert accounts[2].valid_slot == 96878110
+    assert accounts[2].product_account_key == product_account.key
+    assert accounts[2].next_price_account_key is None
 
 
 @ pytest.mark.asyncio
