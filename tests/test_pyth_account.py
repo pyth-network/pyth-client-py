@@ -49,10 +49,14 @@ def product_account(solana_client: SolanaClient) -> PythProductAccount:
 
 
 def test_product_account_update_with_rpc_response_with_data(
+    solana_client: SolanaClient,
     product_account: PythProductAccount
 ):
-    assert product_account.slot == 96866599
-    assert product_account.lamports is None
+    actual = PythProductAccount(
+        key=product_account.key,
+        solana=solana_client,
+    )
+    assert actual.attrs == {}
 
     slot = 96866600
     value = {
@@ -63,17 +67,19 @@ def test_product_account_update_with_rpc_response_with_data(
         ]
     }
 
-    product_account.update_with_rpc_response(slot=slot, value=value)
-    assert product_account.slot == 96866600
+    actual.update_with_rpc_response(slot=slot, value=value)
+    assert actual.slot == slot
+    assert actual.lamports == value['lamports']
+    assert actual.attrs['symbol'] == product_account.attrs['symbol']
+    assert actual.attrs['description'] == product_account.attrs['description']
+    assert actual.attrs['generic_symbol'] == product_account.attrs['generic_symbol']
+    assert actual.attrs['base'] == product_account.attrs['base']
 
 
 def test_pyth_account_update_with_rpc_response_wrong_type(
     pyth_account: PythAccount,
     caplog: LogCaptureFixture
 ):
-    assert pyth_account.slot is None
-    assert pyth_account.lamports is None
-
     slot = 96866600
     value = {
         'lamports': 1000000000,
@@ -92,9 +98,6 @@ def test_pyth_account_update_with_rpc_response_no_data(
     pyth_account: PythAccount,
     caplog: LogCaptureFixture
 ):
-    assert pyth_account.slot is None
-    assert pyth_account.lamports is None
-
     slot = 106498726
     value = {
         "lamports": 1000000000
