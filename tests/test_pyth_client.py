@@ -270,7 +270,7 @@ async def test_get_products(
     product_account: PythProductAccount
 ) -> None:
     products = await pyth_client.get_products()
-    for i in range(len(products)):
+    for i, _ in enumerate(products):
         assert products[i].key == product_account.key
 
 
