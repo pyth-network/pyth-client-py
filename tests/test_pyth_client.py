@@ -19,8 +19,13 @@ from pytest_mock import MockerFixture
 from mock import AsyncMock
 
 
-BCH_PRODUCT_ACCOUNT_KEY_DEVNET = '89GseEmvNkzAMMEXcW9oTYzqRPXTsJ3BmNerXmgA1osV'
-BCH_PRICE_ACCOUNT_KEY_DEVNET = '4EQrNZYk5KR1RnjyzbaaRbHsv8VqZWzSUtvx58wLsZbj'
+# Using constants instead of fixtures because:
+# 1) these values are not expected to be mutated
+# 2) these values are used in get_account_info_resp() and get_program_accounts_resp()
+#    and so if they are passed in as fixtures, the functions will complain for the args
+#    while mocking the respective functions
+BCH_PRODUCT_ACCOUNT_KEY = '89GseEmvNkzAMMEXcW9oTYzqRPXTsJ3BmNerXmgA1osV'
+BCH_PRICE_ACCOUNT_KEY = '4EQrNZYk5KR1RnjyzbaaRbHsv8VqZWzSUtvx58wLsZbj'
 
 MAPPING_ACCOUNT_B64_DATA = ('1MOyoQIAAAABAAAAWAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABqIGcc'
                             'Dj+MshnOP0blrglqTy/fk20r1NqJJfcAh9Ud2A==')
@@ -85,16 +90,16 @@ PRICE_ACCOUNT_B64_DATA = ('1MOyoQIAAAADAAAAEAsAAAEAAAD3////GwAAAAIAAAAfPsYFAAAAA
                           'AAAAAAAAAAAAAAAA')
 
 
-def get_account_info_resp(key: Union[SolanaPublicKeyOrStr, Sequence[SolanaPublicKeyOrStr]]):
+def get_account_info_resp(key: Union[SolanaPublicKeyOrStr, Sequence[SolanaPublicKeyOrStr]]) -> Dict[str, Any]:
     b64_data = ''
     # mapping account
     if key == SolanaPublicKey(V2_FIRST_MAPPING_ACCOUNT_KEY):
         b64_data = MAPPING_ACCOUNT_B64_DATA
     # product account
-    elif key == [SolanaPublicKey(BCH_PRODUCT_ACCOUNT_KEY_DEVNET)]:
+    elif key == [SolanaPublicKey(BCH_PRODUCT_ACCOUNT_KEY)]:
         b64_data = PRODUCT_ACCOUNT_B64_DATA
     # price account
-    elif key == SolanaPublicKey(BCH_PRICE_ACCOUNT_KEY_DEVNET):
+    elif key == SolanaPublicKey(BCH_PRICE_ACCOUNT_KEY):
         b64_data = PRICE_ACCOUNT_B64_DATA
     return {
         'context': {
@@ -141,7 +146,7 @@ def get_program_accounts_resp(key: SolanaPublicKeyOrStr,
                     'owner': V2_PROGRAM_KEY,
                     'rentEpoch': 224
                 },
-                'pubkey': BCH_PRODUCT_ACCOUNT_KEY_DEVNET
+                'pubkey': BCH_PRODUCT_ACCOUNT_KEY
             },
             {
                 'account': {
@@ -154,7 +159,7 @@ def get_program_accounts_resp(key: SolanaPublicKeyOrStr,
                     'owner': V2_PROGRAM_KEY,
                     'rentEpoch': 224
                 },
-                'pubkey': BCH_PRICE_ACCOUNT_KEY_DEVNET
+                'pubkey': BCH_PRICE_ACCOUNT_KEY
             }
         ]
 
@@ -199,14 +204,14 @@ def mapping_account(solana_client: SolanaClient) -> PythMappingAccount:
 @ pytest.fixture
 def mapping_account_entries() -> List[SolanaPublicKey]:
     return [
-        SolanaPublicKey(BCH_PRODUCT_ACCOUNT_KEY_DEVNET)
+        SolanaPublicKey(BCH_PRODUCT_ACCOUNT_KEY)
     ]
 
 
 @ pytest.fixture
 def product_account(solana_client: SolanaClient) -> PythProductAccount:
     product_account = PythProductAccount(
-        key=SolanaPublicKey(BCH_PRODUCT_ACCOUNT_KEY_DEVNET),
+        key=SolanaPublicKey(BCH_PRODUCT_ACCOUNT_KEY),
         solana=solana_client,
     )
     product_account.slot = 96866599
@@ -219,7 +224,7 @@ def product_account(solana_client: SolanaClient) -> PythProductAccount:
         'base': 'BCH'
     }
     product_account.first_price_account_key = SolanaPublicKey(
-        BCH_PRICE_ACCOUNT_KEY_DEVNET,
+        BCH_PRICE_ACCOUNT_KEY,
     )
     return product_account
 
@@ -232,7 +237,7 @@ def product_account_bytes() -> bytes:
 @ pytest.fixture
 def price_account(solana_client: SolanaClient) -> PythPriceAccount:
     return PythPriceAccount(
-        key=SolanaPublicKey(BCH_PRICE_ACCOUNT_KEY_DEVNET),
+        key=SolanaPublicKey(BCH_PRICE_ACCOUNT_KEY),
         solana=solana_client,
     )
 
@@ -374,4 +379,4 @@ def test_create_watch_session(
     watch_session: WatchSession
 ) -> None:
     ws = pyth_client.create_watch_session()
-    assert ws._next_subid() == watch_session._next_subid()
+    assert isinstance(ws, WatchSession)
