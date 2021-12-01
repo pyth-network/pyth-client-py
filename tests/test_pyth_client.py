@@ -6,7 +6,7 @@ from pythclient.pythaccounts import (
     _ACCOUNT_HEADER_BYTES, _VERSION_2, PythMappingAccount, PythPriceType, PythProductAccount, PythPriceAccount
 )
 
-from pythclient.pythclient import PythClient, V2_FIRST_MAPPING_ACCOUNT_KEY, V2_PROGRAM_KEY, WatchSession
+from pythclient.pythclient import PythClient, WatchSession
 from pythclient.solana import (
     SolanaClient,
     SolanaCommitment,
@@ -16,7 +16,7 @@ from pythclient.solana import (
 
 from pytest_mock import MockerFixture
 
-from mock import AsyncMock
+from mock import AsyncMock, Mock
 
 
 # Using constants instead of fixtures because:
@@ -24,6 +24,9 @@ from mock import AsyncMock
 # 2) these values are used in get_account_info_resp() and get_program_accounts_resp()
 #    and so if they are passed in as fixtures, the functions will complain for the args
 #    while mocking the respective functions
+V2_FIRST_MAPPING_ACCOUNT_KEY = 'BmA9Z6FjioHJPpjT39QazZyhDRUdZy2ezwx4GiDdE2u2'
+V2_PROGRAM_KEY = 'gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s'
+
 BCH_PRODUCT_ACCOUNT_KEY = '89GseEmvNkzAMMEXcW9oTYzqRPXTsJ3BmNerXmgA1osV'
 BCH_PRICE_ACCOUNT_KEY = '4EQrNZYk5KR1RnjyzbaaRbHsv8VqZWzSUtvx58wLsZbj'
 
