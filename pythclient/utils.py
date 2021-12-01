@@ -6,6 +6,8 @@ from typing import Optional
 DEFAULT_VERSION = "v2"
 
 
+# Retrieving keys via DNS TXT records should not be considered secure and is provided as a convenience only.
+# Accounts should be stored locally and verified before being used for production.
 def get_key(network: str, type: str, version: str = DEFAULT_VERSION) -> Optional[str]:
     """
     Get the program or mapping keys from dns TXT records.
