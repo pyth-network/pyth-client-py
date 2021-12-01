@@ -16,7 +16,7 @@ from pythclient.solana import (
 
 from pytest_mock import MockerFixture
 
-from mock import AsyncMock, Mock
+from mock import AsyncMock
 
 
 # Using constants instead of fixtures because:
