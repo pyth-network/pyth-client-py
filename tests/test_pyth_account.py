@@ -61,7 +61,7 @@ def test_product_account_update_with_rpc_response_with_data(
     solana_client: SolanaClient,
     product_account: PythProductAccount,
     product_account_b64: str
-):
+) -> None:
     actual = PythProductAccount(
         key=product_account.key,
         solana=solana_client,
@@ -90,7 +90,7 @@ def test_pyth_account_update_with_rpc_response_wrong_type(
     pyth_account: PythAccount,
     caplog: LogCaptureFixture,
     product_account_b64: str
-):
+) -> None:
     slot = 96866600
     value = {
         'lamports': 1000000000,
@@ -108,7 +108,7 @@ def test_pyth_account_update_with_rpc_response_wrong_type(
 def test_pyth_account_update_with_rpc_response_no_data(
     pyth_account: PythAccount,
     caplog: LogCaptureFixture
-):
+) -> None:
     slot = 106498726
     value = {
         "lamports": 1000000000

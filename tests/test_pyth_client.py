@@ -261,7 +261,7 @@ def mock_get_program_accounts(mocker: MockerFixture) -> AsyncMock:
     return async_mock
 
 
-def test_products_property_not_loaded(pyth_client: PythClient):
+def test_products_property_not_loaded(pyth_client: PythClient) -> None:
     with pytest.raises(NotLoadedException):
         pyth_client.products
 
