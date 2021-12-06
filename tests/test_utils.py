@@ -16,7 +16,7 @@ from pythclient.utils import get_key
 
 
 @pytest.fixture()
-def get_answer_program() -> dns.resolver.Answer:
+def answer_program() -> dns.resolver.Answer:
     qname = dns.name.Name(labels=(b'devnet-program-v2', b'pyth', b'network', b''))
     rdtype = dns.rdatatype.TXT
     rdclass = dns.rdataclass.IN
@@ -33,7 +33,7 @@ def get_answer_program() -> dns.resolver.Answer:
 
 
 @pytest.fixture()
-def get_answer_mapping() -> dns.resolver.Answer:
+def answer_mapping() -> dns.resolver.Answer:
     qname = dns.name.Name(labels=(b'devnet-mapping-v2', b'pyth', b'network', b''))
     rdtype = dns.rdatatype.TXT
     rdclass = dns.rdataclass.IN
