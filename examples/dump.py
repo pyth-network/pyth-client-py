@@ -10,9 +10,10 @@ from typing import List, Any
 from loguru import logger
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pythclient.pythclient import PythClient, V2_PROGRAM_KEY, V2_FIRST_MAPPING_ACCOUNT_KEY  # noqa
+from pythclient.pythclient import PythClient  # noqa
 from pythclient.ratelimit import RateLimit  # noqa
 from pythclient.pythaccounts import PythPriceAccount  # noqa
+from pythclient.utils import get_key # noqa
 
 logger.enable("pythclient")
 
@@ -32,9 +33,11 @@ signal.signal(signal.SIGINT, set_to_exit)
 async def main():
     global to_exit
     use_program = len(sys.argv) >= 2 and sys.argv[1] == "program"
+    v2_first_mapping_account_key = get_key("devnet", "mapping")
+    v2_program_key = get_key("devnet", "program")
     async with PythClient(
-        first_mapping_account_key=V2_FIRST_MAPPING_ACCOUNT_KEY,
-        program_key=V2_PROGRAM_KEY if use_program else None,
+        first_mapping_account_key=v2_first_mapping_account_key,
+        program_key=v2_program_key if use_program else None,
     ) as c:
         await c.refresh_all_prices()
         products = await c.get_products()
@@ -57,7 +60,7 @@ async def main():
         await ws.connect()
         if use_program:
             print("Subscribing to program account")
-            await ws.program_subscribe(V2_PROGRAM_KEY, await c.get_all_accounts())
+            await ws.program_subscribe(v2_program_key, await c.get_all_accounts())
         else:
             print("Subscribing to all prices")
             for account in all_prices:
@@ -88,7 +91,7 @@ async def main():
 
         print("Unsubscribing...")
         if use_program:
-            await ws.program_unsubscribe(V2_PROGRAM_KEY)
+            await ws.program_unsubscribe(v2_program_key)
         else:
             for account in all_prices:
                 await ws.unsubscribe(account)

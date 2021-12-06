@@ -14,17 +14,13 @@ from .solana import SolanaAccount, SolanaClient, SolanaPublicKey, SOLANA_DEVNET_
 from .pythaccounts import PythAccount, PythMappingAccount, PythProductAccount, PythPriceAccount
 from . import exceptions, config, ratelimit
 
-V1_FIRST_MAPPING_ACCOUNT_KEY = "ArppEFcsybCLE8CRtQJLQ9tLv2peGmQoKWFuiUWm4KBP"
-V2_FIRST_MAPPING_ACCOUNT_KEY = "BmA9Z6FjioHJPpjT39QazZyhDRUdZy2ezwx4GiDdE2u2"
-V2_PROGRAM_KEY = "gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s"
-
 
 class PythClient:
     def __init__(self, *,
                  solana_client: Optional[SolanaClient] = None,
                  solana_endpoint: str = SOLANA_DEVNET_HTTP_ENDPOINT,
                  solana_ws_endpoint: str = SOLANA_DEVNET_WS_ENDPOINT,
-                 first_mapping_account_key: str = V1_FIRST_MAPPING_ACCOUNT_KEY,
+                 first_mapping_account_key: str,
                  program_key: Optional[str] = None,
                  aiohttp_client_session: Optional[aiohttp.ClientSession] = None) -> None:
         self._first_mapping_account_key = SolanaPublicKey(first_mapping_account_key)
