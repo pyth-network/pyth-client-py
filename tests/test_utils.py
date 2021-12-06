@@ -56,34 +56,34 @@ def mock_dns_resolver_resolve(mocker: MockerFixture) -> Mock:
     return mock
 
 
-def test_utils_get_program_key(mock_dns_resolver_resolve: Mock, get_answer_program: dns.resolver.Answer) -> None:
-    mock_dns_resolver_resolve.return_value = get_answer_program
+def test_utils_get_program_key(mock_dns_resolver_resolve: Mock, answer_program: dns.resolver.Answer) -> None:
+    mock_dns_resolver_resolve.return_value = answer_program
     program_key = get_key("devnet", "program")
     assert program_key == "gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s"
 
 
-def test_utils_get_mapping_key(mock_dns_resolver_resolve: Mock, get_answer_mapping: dns.resolver.Answer) -> None:
-    mock_dns_resolver_resolve.return_value = get_answer_mapping
+def test_utils_get_mapping_key(mock_dns_resolver_resolve: Mock, answer_mapping: dns.resolver.Answer) -> None:
+    mock_dns_resolver_resolve.return_value = answer_mapping
     mapping_key = get_key("devnet", "mapping")
     assert mapping_key == "BmA9Z6FjioHJPpjT39QazZyhDRUdZy2ezwx4GiDdE2u2"
 
 
 def test_utils_get_mapping_key_not_found(mock_dns_resolver_resolve: Mock,
-                                         get_answer_mapping: dns.resolver.Answer,
+                                         answer_mapping: dns.resolver.Answer,
                                          caplog: LogCaptureFixture) -> None:
     mock_dns_resolver_resolve.side_effect = dns.resolver.NXDOMAIN
-    exc_message = f'TXT record for {str(get_answer_mapping.response.canonical_name())[:-1]} not found'
+    exc_message = f'TXT record for {str(answer_mapping.response.canonical_name())[:-1]} not found'
     key = get_key("devnet", "mapping")
     assert exc_message in caplog.text
     assert key == ""
 
 
 def test_utils_get_mapping_key_invalid_number(mock_dns_resolver_resolve: Mock,
-                                              get_answer_mapping: dns.resolver.Answer,
+                                              answer_mapping: dns.resolver.Answer,
                                               caplog: LogCaptureFixture) -> None:
-    get_answer_mapping.rrset = None
-    mock_dns_resolver_resolve.return_value = get_answer_mapping
-    exc_message = f'Invalid number of records returned for {str(get_answer_mapping.response.canonical_name())[:-1]}!'
+    answer_mapping.rrset = None
+    mock_dns_resolver_resolve.return_value = answer_mapping
+    exc_message = f'Invalid number of records returned for {str(answer_mapping.response.canonical_name())[:-1]}!'
     key = get_key("devnet", "mapping")
     assert exc_message in caplog.text
     assert key == ""
