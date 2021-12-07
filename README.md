@@ -29,3 +29,27 @@ If html based test coverage is more your jam:
     pytest --cov-report=html
 
 The coverage webpages will be in the `htmlcov` directory.
+
+
+Distribution
+------------
+
+To build the package for distribution to pypi, first install dependencies:
+
+`python3 -m pip install --upgrade twine build`
+
+Next, edit `setup.py` and bump the `version` field.
+Then build the package by running:
+
+```
+python3 -m build
+```
+
+This command will produce packages in the `dist/` directory.
+Upload these packages to pypi by running:
+
+```
+python3 -m twine upload --repository pypi dist/*
+```
+
+This command will require you to log in to a pypi account.
