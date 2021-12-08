@@ -7,6 +7,53 @@ A Python library to retrieve data from Pyth account structures off the Solana bl
 
 **NOTE**: This library requires Python 3.7 or greater due to `from __future__ import annotations`.
 
+Usage
+--------------
+
+Install the library:
+
+    pip install pythclient
+
+You can then read the current Pyth price using the following:
+
+```
+from pythclient.pythclient import PythClient
+from pythclient.pythaccounts import PythPriceAccount
+from pythclient.utils import get_key
+
+solana_network="devnet"
+async with PythClient(
+    first_mapping_account_key=get_key(solana_network, "mapping"),
+    program_key=get_key(solana_network, "program") if use_program else None,
+) as c:
+    await c.refresh_all_prices()
+    products = await c.get_products()
+    for p in products:
+        print(p.attrs)
+        prices = await p.get_prices()
+        for _, pr in prices.items():
+            print(
+                pr.price_type,
+                pr.aggregate_price,
+                "p/m",
+                pr.aggregate_price_confidence_interval,
+            )
+```
+
+This code snippet lists the products on pyth and the price for each product. Sample output is:
+
+```
+{'symbol': 'Crypto.ETH/USD', 'asset_type': 'Crypto', 'quote_currency': 'USD', 'description': 'ETH/USD', 'generic_symbol': 'ETHUSD', 'base': 'ETH'}
+PythPriceType.PRICE 4390.286 p/m 2.4331
+{'symbol': 'Crypto.SOL/USD', 'asset_type': 'Crypto', 'quote_currency': 'USD', 'description': 'SOL/USD', 'generic_symbol': 'SOLUSD', 'base': 'SOL'}
+PythPriceType.PRICE 192.27550000000002 p/m 0.0485
+{'symbol': 'Crypto.SRM/USD', 'asset_type': 'Crypto', 'quote_currency': 'USD', 'description': 'SRM/USD', 'generic_symbol': 'SRMUSD', 'base': 'SRM'}
+PythPriceType.PRICE 4.23125 p/m 0.0019500000000000001
+...
+```
+
+The library also includes an asynchronous API that updates the prices using a websocket subscription or account polling.
+See `examples/dump.py` for a more detailed usage example.
 
 Developer Setup
 ---------------
