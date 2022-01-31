@@ -52,8 +52,9 @@ PythPriceType.PRICE 4.23125 p/m 0.0019500000000000001
 ...
 ```
 
-The library also includes an asynchronous API that updates the prices using a websocket subscription or account polling.
-See `examples/dump.py` for a more detailed usage example.
+The `examples` directory includes some example applications that demonstrate how to use this library:
+* `examples/dump.py` is a detailed usage example that demonstrates the asynchronous API to update prices using a websocket subscription or account polling.
+* `examples/read_one_price_feed.py` shows how to read the price of a single price feed using its account key.
 
 Developer Setup
 ---------------
