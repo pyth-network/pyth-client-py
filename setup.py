@@ -1,6 +1,6 @@
 from setuptools import setup
 
-requirements = ['aiodns', 'aiohttp>=3.7.4', 'backoff', 'base58', 'dnspython', 'flake8', 'loguru']
+requirements = ['aiodns', 'aiohttp>=3.7.4', 'backoff', 'base58', 'dnspython', 'flake8', 'loguru', 'typing-extensions']
 
 with open('README.md', 'r', encoding='utf-8') as fh:
     long_description = fh.read()
