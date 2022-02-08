@@ -34,8 +34,8 @@ signal.signal(signal.SIGINT, set_to_exit)
 async def main():
     global to_exit
     use_program = len(sys.argv) >= 2 and sys.argv[1] == "program"
-    v2_first_mapping_account_key = get_key("mainnet", "mapping")
-    v2_program_key = get_key("mainnet", "program")
+    v2_first_mapping_account_key = get_key("devnet", "mapping")
+    v2_program_key = get_key("devnet", "program")
     async with PythClient(
         first_mapping_account_key=v2_first_mapping_account_key,
         program_key=v2_program_key if use_program else None,
