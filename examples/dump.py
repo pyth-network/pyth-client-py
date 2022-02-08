@@ -8,6 +8,7 @@ import sys
 from typing import List, Any
 
 from loguru import logger
+from pythclient.solana import SOLANA_DEVNET_HTTP_ENDPOINT, SOLANA_DEVNET_WS_ENDPOINT
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pythclient.pythclient import PythClient  # noqa
@@ -38,6 +39,8 @@ async def main():
     async with PythClient(
         first_mapping_account_key=v2_first_mapping_account_key,
         program_key=v2_program_key if use_program else None,
+        solana_endpoint=SOLANA_DEVNET_HTTP_ENDPOINT, # replace with the relevant cluster endpoints
+        solana_ws_endpoint=SOLANA_DEVNET_WS_ENDPOINT # replace with the relevant cluster endpoints
     ) as c:
         await c.refresh_all_prices()
         products = await c.get_products()
