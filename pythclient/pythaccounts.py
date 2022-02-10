@@ -355,7 +355,6 @@ class PythProductAccount(PythAccount):
     def to_json(self):
 
         return {
-            'price_types': [PythPriceType(x).name for x in self.prices.keys()],
             'symbol': self.symbol,
         }
 
@@ -475,8 +474,8 @@ class PythPriceComponent:
 
         return {
             "publisher_key": self.publisher_key,
-            "last_aggregate_price_info": self.last_aggregate_price_info,
-            "latest_price_info": self.latest_price_info,
+            "last_aggregate_price_info": self.last_aggregate_price_info.to_json(),
+            "latest_price_info": self.latest_price_info.to_json(),
             "exponent": self.exponent
         }
 
