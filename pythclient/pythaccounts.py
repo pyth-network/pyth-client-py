@@ -609,7 +609,7 @@ class PythPriceAccount(PythAccount):
     def to_json(self):
 
         return {
-            "product": self.product,
+            "product": self.product.to_json(),
             "price_type": self.price_type.name,
             "exponent": self.exponent,
             "num_components": self.num_components,
@@ -617,8 +617,8 @@ class PythPriceAccount(PythAccount):
             "valid_slot": self.valid_slot,
             "product_account_key": self.product_account_key,
             "next_price_account_key": self.next_price_account_key,
-            "aggregate_price_info": self.aggregate_price_info,
-            "price_components": self.price_components,
+            "aggregate_price_info": self.aggregate_price_info.to_json(),
+            "price_components": [x.to_json() for x in self.price_components],
             "derivations": [TwEmaType(x).name for x in list(self.derivations.keys())],
             "min_publishers": self.min_publishers,
             "aggregate_price": self.aggregate_price,
