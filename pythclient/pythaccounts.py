@@ -352,6 +352,13 @@ class PythProductAccount(PythAccount):
             if not key.startswith('_'):
                 yield key, val
 
+    def to_json(self):
+
+        return {
+            'prices': self.prices,
+            'symbol': self.symbol,
+        }
+
 
 @dataclass
 class PythPriceInfo:
@@ -407,6 +414,19 @@ class PythPriceInfo:
     def __repr__(self) -> str:
         return str(self)
 
+    def to_json(self):
+
+        return {
+            "price": self.price,
+            "confidence_interval": self.confidence_interval,
+            "price_status": self.price_status.name,
+            "slot": self.slot,
+            "exponent": self.exponent,
+            "raw_confidence_interval": self.raw_confidence_interval,
+            "raw_price": self.raw_price
+        }
+
+
 
 @dataclass
 class PythPriceComponent:
@@ -450,6 +470,15 @@ class PythPriceComponent:
         offset += PythPriceInfo.LENGTH
         latest_price = PythPriceInfo.deserialise(buffer, offset, exponent=exponent)
         return PythPriceComponent(key, last_aggregate_price, latest_price, exponent)
+
+    def to_json(self):
+
+        return {
+            "publisher_key": self.publisher_key,
+            "last_aggregate_price_info": self.last_aggregate_price_info,
+            "latest_price_info": self.latest_price_info,
+            "exponent": self.exponent
+        }
 
 
 class PythPriceAccount(PythAccount):
@@ -576,6 +605,25 @@ class PythPriceAccount(PythAccount):
             return f"PythPriceAccount {self.product.symbol} {self.price_type} ({self.key})"
         else:
             return f"PythPriceAccount {self.price_type} ({self.key})"
+
+    def to_json(self):
+
+        return {
+            "product": self.product,
+            "price_type": self.price_type.name,
+            "exponent": self.exponent,
+            "num_components": self.num_components,
+            "last_slot": self.last_slot,
+            "valid_slot": self.valid_slot,
+            "product_account_key": self.product_account_key,
+            "next_price_account_key": self.next_price_account_key,
+            "aggregate_price_info": self.aggregate_price_info,
+            "price_components": self.price_components,
+            "derivations": [TwEmaType(x).name for x in list(self.derivations.keys())],
+            "min_publishers": self.min_publishers,
+            "aggregate_price": self.aggregate_price,
+            "aggregate_price_confidence_interval": self.aggregate_price_confidence_interval
+        }
 
 
 _ACCOUNT_TYPE_TO_CLASS = {
