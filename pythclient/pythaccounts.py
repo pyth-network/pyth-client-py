@@ -473,7 +473,7 @@ class PythPriceComponent:
     def to_json(self):
 
         return {
-            "publisher_key": self.publisher_key,
+            "publisher_key": str(self.publisher_key),
             "last_aggregate_price_info": self.last_aggregate_price_info.to_json(),
             "latest_price_info": self.latest_price_info.to_json(),
             "exponent": self.exponent
@@ -614,8 +614,8 @@ class PythPriceAccount(PythAccount):
             "num_components": self.num_components,
             "last_slot": self.last_slot,
             "valid_slot": self.valid_slot,
-            "product_account_key": self.product_account_key,
-            "next_price_account_key": self.next_price_account_key,
+            "product_account_key": str(self.product_account_key),
+            "next_price_account_key": str(self.next_price_account_key),
             "aggregate_price_info": self.aggregate_price_info.to_json(),
             "price_components": [x.to_json() for x in self.price_components],
             "derivations": {TwEmaType(x).name: self.derivations.get(x) for x in list(self.derivations.keys())},
