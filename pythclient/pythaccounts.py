@@ -355,7 +355,7 @@ class PythProductAccount(PythAccount):
     def to_json(self):
 
         return {
-            'prices': {PythPriceType(x).name: self.prices.get(x).to_json() for x in self.prices.keys()},
+            'price_types': [PythPriceType(x).name for x in self.prices.keys()],
             'symbol': self.symbol,
         }
 
