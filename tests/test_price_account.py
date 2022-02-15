@@ -1,9 +1,9 @@
-from unittest.mock import AsyncMock
 import pytest
 import base64
 from dataclasses import asdict
 
 from pytest_mock import MockerFixture
+from mock import AsyncMock
 
 from pythclient.pythaccounts import (
     MAX_SLOT_DIFFERENCE,
