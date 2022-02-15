@@ -8,7 +8,7 @@ import struct
 from loguru import logger
 
 from . import exceptions
-from .solana import SolanaPublicKey, SolanaPublicKeyOrStr, SolanaClient, SolanaAccount
+from .solana import SolanaCommitment, SolanaPublicKey, SolanaPublicKeyOrStr, SolanaClient, SolanaAccount
 
 
 _MAGIC = 0xA1B2C3D4
@@ -17,6 +17,7 @@ _VERSION_2 = 2
 _SUPPORTED_VERSIONS = set((_VERSION_1, _VERSION_2))
 _ACCOUNT_HEADER_BYTES = 16  # magic + version + type + size, u32 * 4
 _NULL_KEY_BYTES = b'\x00' * SolanaPublicKey.LENGTH
+MAX_SLOT_DIFFERENCE = 25
 
 
 class PythAccountType(Enum):
@@ -500,6 +501,18 @@ class PythPriceAccount(PythAccount):
     def aggregate_price_confidence_interval(self) -> Optional[float]:
         """the aggregate price confidence interval"""
         return self.aggregate_price_info and self.aggregate_price_info.confidence_interval
+
+    async def get_aggregate_price_status(self, commitment: str = SolanaCommitment.CONFIRMED) -> Optional[PythPriceStatus]:
+        """the aggregate price status"""
+
+        if self.aggregate_price_info:
+            current_slot = await self.solana.get_commitment_slot(commitment)
+
+            if self.aggregate_price_info.price_status == PythPriceStatus.TRADING and \
+                current_slot - self.aggregate_price_info.slot > MAX_SLOT_DIFFERENCE:
+                return PythPriceStatus.UNKNOWN
+
+            return self.aggregate_price_info.price_status
 
     def update_from(self, buffer: bytes, *, version: int, offset: int = 0) -> None:
         """

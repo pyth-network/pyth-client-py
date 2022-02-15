@@ -13,7 +13,7 @@ from pythclient.solana import SOLANA_DEVNET_HTTP_ENDPOINT, SOLANA_DEVNET_WS_ENDP
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pythclient.pythclient import PythClient  # noqa
 from pythclient.ratelimit import RateLimit  # noqa
-from pythclient.pythaccounts import PythPriceAccount  # noqa
+from pythclient.pythaccounts import PythPriceAccount, PythPriceStatus  # noqa
 from pythclient.utils import get_key # noqa
 
 logger.enable("pythclient")
@@ -50,10 +50,12 @@ async def main():
             prices = await p.get_prices()
             for _, pr in prices.items():
                 all_prices.append(pr)
+                price_status: PythPriceStatus = await pr.get_aggregate_price_status()
                 print(
                     pr.key,
                     pr.product_account_key,
                     pr.price_type,
+                    price_status,
                     pr.aggregate_price,
                     "p/m",
                     pr.aggregate_price_confidence_interval,
@@ -83,14 +85,16 @@ async def main():
                     pr = update_task.result()
                     if isinstance(pr, PythPriceAccount):
                         assert pr.product
+                        price_status: PythPriceStatus = await pr.get_aggregate_price_status()
                         print(
                             pr.product.symbol,
                             pr.price_type,
+                            price_status,
                             pr.aggregate_price,
                             "p/m",
                             pr.aggregate_price_confidence_interval,
                         )
-                        break
+                    break
 
         print("Unsubscribing...")
         if use_program:

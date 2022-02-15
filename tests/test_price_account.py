@@ -1,8 +1,12 @@
+from unittest.mock import AsyncMock
 import pytest
 import base64
 from dataclasses import asdict
 
+from pytest_mock import MockerFixture
+
 from pythclient.pythaccounts import (
+    MAX_SLOT_DIFFERENCE,
     PythPriceAccount,
     PythPriceType,
     PythPriceStatus,
@@ -62,6 +66,13 @@ def price_account(solana_client: SolanaClient) -> PythPriceAccount:
         key=SolanaPublicKey("5ALDzwcRJfSyGdGyhP3kP628aqBNHZzLuVww7o9kdspe"),
         solana=solana_client,
     )
+
+
+@pytest.fixture()
+def mock_get_commitment_slot(mocker: MockerFixture) -> AsyncMock:
+    async_mock = AsyncMock()
+    mocker.patch('pythclient.solana.SolanaClient.get_commitment_slot', side_effect=async_mock)
+    return async_mock
 
 
 def test_price_account_update_from(price_account_bytes: bytes, price_account: PythPriceAccount):
@@ -149,3 +160,23 @@ def test_price_account_agregate_price(
 ):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
     assert price_account.aggregate_price == 707.125
+
+@pytest.mark.asyncio
+async def test_price_account_get_aggregate_price_status_still_trading(
+    price_account_bytes: bytes, price_account: PythPriceAccount, mock_get_commitment_slot: AsyncMock
+):
+    price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
+    mock_get_commitment_slot.return_value = price_account.aggregate_price_info.slot + MAX_SLOT_DIFFERENCE
+
+    price_status = await price_account.get_aggregate_price_status()
+    assert price_status == PythPriceStatus.TRADING
+
+@pytest.mark.asyncio
+async def test_price_account_get_aggregate_price_status_got_stale(
+    price_account_bytes: bytes, price_account: PythPriceAccount, mock_get_commitment_slot: AsyncMock
+):
+    price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
+    mock_get_commitment_slot.return_value = price_account.aggregate_price_info.slot + MAX_SLOT_DIFFERENCE + 1
+
+    price_status = await price_account.get_aggregate_price_status()
+    assert price_status == PythPriceStatus.UNKNOWN

@@ -2,7 +2,7 @@
 
 import asyncio
 
-from pythclient.pythaccounts import PythPriceAccount
+from pythclient.pythaccounts import PythPriceAccount, PythPriceStatus
 from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_DEVNET_HTTP_ENDPOINT, SOLANA_DEVNET_WS_ENDPOINT
 
 async def get_price():
@@ -12,7 +12,12 @@ async def get_price():
     price: PythPriceAccount = PythPriceAccount(account_key, solana_client)
 
     await price.update()
+
+    price_status: PythPriceStatus = await price.get_aggregate_price_status()
     # Sample output: "DOGE/USD is 0.141455 ± 7.4e-05"
-    print("DOGE/USD is", price.aggregate_price, "±", price.aggregate_price_confidence_interval)
+    if price_status == PythPriceStatus.TRADING:
+        print("DOGE/USD is", price.aggregate_price, "±", price.aggregate_price_confidence_interval)
+    else:
+        print("Price is not valid now. Status is", price_status)
 
 asyncio.run(get_price())
