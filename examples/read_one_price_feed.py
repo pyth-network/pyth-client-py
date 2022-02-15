@@ -20,4 +20,6 @@ async def get_price():
     else:
         print("Price is not valid now. Status is", price_status)
 
+    await solana_client.close()
+
 asyncio.run(get_price())
