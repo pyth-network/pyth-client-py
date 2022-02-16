@@ -524,14 +524,11 @@ class PythPriceAccount(PythAccount):
         Gets the aggregate price status given a solana slot.
         You might consider using this function with the latest solana slot to make sure the price has not gone stale.
         """
-        if self.aggregate_price_info:
-            if self.aggregate_price_info.price_status == PythPriceStatus.TRADING and \
-                slot - self.aggregate_price_info.pub_slot > MAX_SLOT_DIFFERENCE:
-                return PythPriceStatus.UNKNOWN
+        if self.aggregate_price_info.price_status == PythPriceStatus.TRADING and \
+            slot - self.aggregate_price_info.pub_slot > MAX_SLOT_DIFFERENCE:
+            return PythPriceStatus.UNKNOWN
 
-            return self.aggregate_price_info.price_status
-        else:
-            return None
+        return self.aggregate_price_info.price_status
 
     def update_from(self, buffer: bytes, *, version: int, offset: int = 0) -> None:
         """
