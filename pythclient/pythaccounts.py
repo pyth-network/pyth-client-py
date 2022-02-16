@@ -17,6 +17,7 @@ _VERSION_2 = 2
 _SUPPORTED_VERSIONS = set((_VERSION_1, _VERSION_2))
 _ACCOUNT_HEADER_BYTES = 16  # magic + version + type + size, u32 * 4
 _NULL_KEY_BYTES = b'\x00' * SolanaPublicKey.LENGTH
+MAX_SLOT_DIFFERENCE = 25
 
 
 class PythAccountType(Enum):
@@ -364,7 +365,7 @@ class PythPriceInfo:
         price (int): the price
         confidence_interval (int): the price confidence interval
         price_status (PythPriceStatus): the price status
-        slot (int): the slot time this price information was published
+        pub_slot (int): the slot time this price information was published
         exponent (int): the power-of-10 order of the price
     """
 
@@ -373,7 +374,7 @@ class PythPriceInfo:
     raw_price: int
     raw_confidence_interval: int
     price_status: PythPriceStatus
-    slot: int
+    pub_slot: int
     exponent: int
 
     price: float = field(init=False)
@@ -397,9 +398,9 @@ class PythPriceInfo:
             slot (u64)
         """
         # _ is corporate_action
-        price, confidence_interval, price_status, _, slot = struct.unpack_from(
+        price, confidence_interval, price_status, _, pub_slot = struct.unpack_from(
             "<qQIIQ", buffer, offset)
-        return PythPriceInfo(price, confidence_interval, PythPriceStatus(price_status), slot, exponent)
+        return PythPriceInfo(price, confidence_interval, PythPriceStatus(price_status), pub_slot, exponent)
 
     def __str__(self) -> str:
         return f"PythPriceInfo status {self.price_status} price {self.price}"
@@ -472,7 +473,7 @@ class PythPriceAccount(PythAccount):
         aggregate_price_info (PythPriceInfo): the aggregate price information
         price_components (List[PythPriceComponent]): the price components that the
             aggregate price is composed of
-        slot (int): the slot time when this account was last updated
+        slot (int): the slot time when this account was last fetched
         product (Optional[PythProductAccount]): the product this price is for, if loaded
     """
 
@@ -493,13 +494,41 @@ class PythPriceAccount(PythAccount):
 
     @property
     def aggregate_price(self) -> Optional[float]:
-        """the aggregate price"""
-        return self.aggregate_price_info and self.aggregate_price_info.price
+        """
+        The aggregate price. Returns None if price is not currently available.
+        If you need the price value regardless of availability use `aggregate_price_info.price`
+        """
+        if self.aggregate_price_status == PythPriceStatus.TRADING:
+            return self.aggregate_price_info.price
+        else:
+            return None
 
     @property
     def aggregate_price_confidence_interval(self) -> Optional[float]:
-        """the aggregate price confidence interval"""
-        return self.aggregate_price_info and self.aggregate_price_info.confidence_interval
+        """
+        The aggregate price confidence interval. Returns None if price is not currently available.
+        If you need the confidence value regardless of availability use `aggregate_price_info.confidence_interval`
+        """
+        if self.aggregate_price_status == PythPriceStatus.TRADING:
+            return self.aggregate_price_info.confidence_interval
+        else:
+            return None
+    
+    @property
+    def aggregate_price_status(self) -> Optional[PythPriceStatus]:
+        """The aggregate price status."""
+        return self.get_aggregate_price_status_with_slot(self.slot)
+
+    def get_aggregate_price_status_with_slot(self, slot: int) -> Optional[PythPriceStatus]:
+        """
+        Gets the aggregate price status given a solana slot.
+        You might consider using this function with the latest solana slot to make sure the price has not gone stale.
+        """
+        if self.aggregate_price_info.price_status == PythPriceStatus.TRADING and \
+            slot - self.aggregate_price_info.pub_slot > MAX_SLOT_DIFFERENCE:
+            return PythPriceStatus.UNKNOWN
+
+        return self.aggregate_price_info.price_status
 
     def update_from(self, buffer: bytes, *, version: int, offset: int = 0) -> None:
         """

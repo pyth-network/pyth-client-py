@@ -286,10 +286,10 @@ class SolanaClient:
     async def get_cluster_nodes(self) -> List[Dict[str, Any]]:
         return await self.http_send("getClusterNodes")
 
-    async def get_commitment_slot(
+    async def get_slot(
         self,
-        commitment: str
-        ) -> Dict[str, Any]:
+        commitment: str = SolanaCommitment.CONFIRMED,
+        ) -> Union[int, Dict[str, Any]]:
         return await self.http_send(
             "getSlot",
             [{"commitment": commitment}]
