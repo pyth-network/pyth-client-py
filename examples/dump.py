@@ -50,12 +50,11 @@ async def main():
             prices = await p.get_prices()
             for _, pr in prices.items():
                 all_prices.append(pr)
-                price_status: PythPriceStatus = await pr.get_aggregate_price_status()
                 print(
                     pr.key,
                     pr.product_account_key,
                     pr.price_type,
-                    price_status,
+                    pr.aggregate_price_status,
                     pr.aggregate_price,
                     "p/m",
                     pr.aggregate_price_confidence_interval,
@@ -85,11 +84,10 @@ async def main():
                     pr = update_task.result()
                     if isinstance(pr, PythPriceAccount):
                         assert pr.product
-                        price_status: PythPriceStatus = await pr.get_aggregate_price_status()
                         print(
                             pr.product.symbol,
                             pr.price_type,
-                            price_status,
+                            pr.aggregate_price_status,
                             pr.aggregate_price,
                             "p/m",
                             pr.aggregate_price_confidence_interval,

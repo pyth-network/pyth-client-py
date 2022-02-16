@@ -2,9 +2,6 @@ import pytest
 import base64
 from dataclasses import asdict
 
-from pytest_mock import MockerFixture
-from mock import AsyncMock
-
 from pythclient.pythaccounts import (
     MAX_SLOT_DIFFERENCE,
     PythPriceAccount,
@@ -59,21 +56,12 @@ def price_account_bytes():
         b'AAABAAAAAAAAANipUgYAAAAAn4M0eBAAAABh7UgCAAAAAAEAAAAAAAAA2alSBgAAAAA='
     ))
 
-
 @pytest.fixture
 def price_account(solana_client: SolanaClient) -> PythPriceAccount:
     return PythPriceAccount(
         key=SolanaPublicKey("5ALDzwcRJfSyGdGyhP3kP628aqBNHZzLuVww7o9kdspe"),
         solana=solana_client,
     )
-
-
-@pytest.fixture()
-def mock_get_commitment_slot(mocker: MockerFixture) -> AsyncMock:
-    async_mock = AsyncMock()
-    mocker.patch('pythclient.solana.SolanaClient.get_commitment_slot', side_effect=async_mock)
-    return async_mock
-
 
 def test_price_account_update_from(price_account_bytes: bytes, price_account: PythPriceAccount):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
@@ -92,7 +80,7 @@ def test_price_account_update_from(price_account_bytes: bytes, price_account: Py
         "raw_price": 70712500000,
         "raw_confidence_interval": 36630500,
         "price_status": PythPriceStatus.TRADING,
-        "slot": 106080731,
+        "pub_slot": 106080731,
         "exponent": -8,
         "price": 707.125,
         "confidence_interval": 0.366305,
@@ -106,7 +94,7 @@ def test_price_account_update_from(price_account_bytes: bytes, price_account: Py
             "raw_price": 70709500000,
             "raw_confidence_interval": 21500000,
             "price_status": PythPriceStatus.TRADING,
-            "slot": 106080728,
+            "pub_slot": 106080728,
             "exponent": -8,
             "price": 707.095,
             "confidence_interval": 0.215,
@@ -115,7 +103,7 @@ def test_price_account_update_from(price_account_bytes: bytes, price_account: Py
             "raw_price": 70709500000,
             "raw_confidence_interval": 21500000,
             "price_status": PythPriceStatus.TRADING,
-            "slot": 106080729,
+            "pub_slot": 106080729,
             "exponent": -8,
             "price": 707.095,
             "confidence_interval": 0.215,
@@ -152,6 +140,7 @@ def test_price_account_agregate_conf_interval(
     price_account_bytes: bytes, price_account: PythPriceAccount,
 ):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
+    price_account.slot = price_account.aggregate_price_info.pub_slot
     assert price_account.aggregate_price_confidence_interval == 0.366305
 
 
@@ -159,24 +148,33 @@ def test_price_account_agregate_price(
     price_account_bytes: bytes, price_account: PythPriceAccount,
 ):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
+    price_account.slot = price_account.aggregate_price_info.pub_slot
     assert price_account.aggregate_price == 707.125
 
-@pytest.mark.asyncio
-async def test_price_account_get_aggregate_price_status_still_trading(
-    price_account_bytes: bytes, price_account: PythPriceAccount, mock_get_commitment_slot: AsyncMock
+def test_price_account_unknown_status(
+    price_account_bytes: bytes, price_account: PythPriceAccount,
 ):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
-    mock_get_commitment_slot.return_value = price_account.aggregate_price_info.slot + MAX_SLOT_DIFFERENCE
+    price_account.slot = price_account.aggregate_price_info.pub_slot
+    price_account.aggregate_price_info.price_status = PythPriceStatus.UNKNOWN
 
-    price_status = await price_account.get_aggregate_price_status()
+    assert price_account.aggregate_price is None
+    assert price_account.aggregate_price_confidence_interval is None
+
+def test_price_account_get_aggregate_price_status_still_trading(
+    price_account_bytes: bytes, price_account: PythPriceAccount
+):
+    price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
+    price_account.slot = price_account.aggregate_price_info.pub_slot + MAX_SLOT_DIFFERENCE
+
+    price_status = price_account.aggregate_price_status
     assert price_status == PythPriceStatus.TRADING
 
-@pytest.mark.asyncio
-async def test_price_account_get_aggregate_price_status_got_stale(
-    price_account_bytes: bytes, price_account: PythPriceAccount, mock_get_commitment_slot: AsyncMock
+def test_price_account_get_aggregate_price_status_got_stale(
+    price_account_bytes: bytes, price_account: PythPriceAccount
 ):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
-    mock_get_commitment_slot.return_value = price_account.aggregate_price_info.slot + MAX_SLOT_DIFFERENCE + 1
+    price_account.slot = price_account.aggregate_price_info.pub_slot + MAX_SLOT_DIFFERENCE + 1
 
-    price_status = await price_account.get_aggregate_price_status()
+    price_status = price_account.aggregate_price_status
     assert price_status == PythPriceStatus.UNKNOWN

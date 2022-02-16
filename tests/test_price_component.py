@@ -21,14 +21,14 @@ def price_component() -> PythPriceComponent:
         'raw_price': 62931500000,
         'raw_confidence_interval': 16500000,
         'price_status': PythPriceStatus.TRADING,
-        'slot': 105886163,
+        'pub_slot': 105886163,
         'exponent': exponent,
     })
     latest_price = PythPriceInfo(**{
         'raw_price': 62931500000,
         'raw_confidence_interval': 16500000,
         'price_status': PythPriceStatus.TRADING,
-        'slot': 105886164,
+        'pub_slot': 105886164,
         'exponent': exponent,
     })
     return PythPriceComponent(

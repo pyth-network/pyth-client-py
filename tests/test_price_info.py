@@ -10,7 +10,7 @@ def price_info_trading():
         raw_price=59609162000,
         raw_confidence_interval=43078500,
         price_status=PythPriceStatus.TRADING,
-        slot=105367617,
+        pub_slot=105367617,
         exponent=-8,
     )
 
@@ -21,7 +21,7 @@ def price_info_trading_bytes():
 
 
 @pytest.mark.parametrize(
-    "raw_price,raw_confidence_interval,price_status,slot,exponent,price,confidence_interval",
+    "raw_price,raw_confidence_interval,price_status,pub_slot,exponent,price,confidence_interval",
     [
         (
             1234567890,
@@ -42,7 +42,7 @@ class TestPythPriceInfo:
         raw_price,
         raw_confidence_interval,
         price_status,
-        slot,
+        pub_slot,
         exponent,
         price,
         confidence_interval,
@@ -51,7 +51,7 @@ class TestPythPriceInfo:
             raw_price=raw_price,
             raw_confidence_interval=raw_confidence_interval,
             price_status=price_status,
-            slot=slot,
+            pub_slot=pub_slot,
             exponent=exponent,
         )
         for key, actual_value in asdict(actual).items():
@@ -62,7 +62,7 @@ class TestPythPriceInfo:
         raw_price,
         raw_confidence_interval,
         price_status,
-        slot,
+        pub_slot,
         exponent,
         price,
         confidence_interval,
@@ -72,7 +72,7 @@ class TestPythPriceInfo:
                 raw_price=raw_price,
                 raw_confidence_interval=raw_confidence_interval,
                 price_status=price_status,
-                slot=slot,
+                pub_slot=pub_slot,
                 exponent=exponent,
             )
         )
@@ -80,7 +80,7 @@ class TestPythPriceInfo:
             "raw_price": raw_price,
             "raw_confidence_interval": raw_confidence_interval,
             "price_status": price_status,
-            "slot": slot,
+            "pub_slot": pub_slot,
             "exponent": exponent,
             "price": price,
             "confidence_interval": confidence_interval,
