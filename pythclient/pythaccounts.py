@@ -8,7 +8,7 @@ import struct
 from loguru import logger
 
 from . import exceptions
-from .solana import SolanaCommitment, SolanaPublicKey, SolanaPublicKeyOrStr, SolanaClient, SolanaAccount
+from .solana import SolanaPublicKey, SolanaPublicKeyOrStr, SolanaClient, SolanaAccount
 
 
 _MAGIC = 0xA1B2C3D4
@@ -496,7 +496,7 @@ class PythPriceAccount(PythAccount):
     def aggregate_price(self) -> Optional[float]:
         """
         The aggregate price. Returns None if price is not currently available.
-        If you need the price value regardless of availability please use `aggregate_price_info.price`
+        If you need the price value regardless of availability use `aggregate_price_info.price`
         """
         if self.aggregate_price_status == PythPriceStatus.TRADING:
             return self.aggregate_price_info.price
@@ -507,7 +507,7 @@ class PythPriceAccount(PythAccount):
     def aggregate_price_confidence_interval(self) -> Optional[float]:
         """
         The aggregate price confidence interval. Returns None if price is not currently available.
-        If you need the confidence value regardless of availability please use `aggregate_price_info.confidence_interval`
+        If you need the confidence value regardless of availability use `aggregate_price_info.confidence_interval`
         """
         if self.aggregate_price_status == PythPriceStatus.TRADING:
             return self.aggregate_price_info.confidence_interval
@@ -522,7 +522,7 @@ class PythPriceAccount(PythAccount):
     def get_aggregate_price_status_with_slot(self, slot: int) -> Optional[PythPriceStatus]:
         """
         Gets the aggregate price status given a solana slot.
-        You might need to use it with the latest solana slot to make sure the price has not gone stale.
+        You might consider using this function with the latest solana slot to make sure the price has not gone stale.
         """
         if self.aggregate_price_info:
             if self.aggregate_price_info.price_status == PythPriceStatus.TRADING and \

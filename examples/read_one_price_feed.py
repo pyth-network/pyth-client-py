@@ -13,7 +13,7 @@ async def get_price():
 
     await price.update()
 
-    price_status: PythPriceStatus = price.aggregate_price_status
+    price_status = price.aggregate_price_status
     # Sample output: "DOGE/USD is 0.141455 ± 7.4e-05"
     if price_status == PythPriceStatus.TRADING:
         print("DOGE/USD is", price.aggregate_price, "±", price.aggregate_price_confidence_interval)

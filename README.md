@@ -34,7 +34,7 @@ async with PythClient(
         for _, pr in prices.items():
             print(
                 pr.price_type,
-                await pr.get_aggregate_price_status(),
+                pr.aggregate_price_status,
                 pr.aggregate_price,
                 "p/m",
                 pr.aggregate_price_confidence_interval,
@@ -49,7 +49,7 @@ PythPriceType.PRICE PythPriceStatus.TRADING 4390.286 p/m 2.4331
 {'symbol': 'Crypto.SOL/USD', 'asset_type': 'Crypto', 'quote_currency': 'USD', 'description': 'SOL/USD', 'generic_symbol': 'SOLUSD', 'base': 'SOL'}
 PythPriceType.PRICE PythPriceStatus.TRADING 192.27550000000002 p/m 0.0485
 {'symbol': 'Crypto.SRM/USD', 'asset_type': 'Crypto', 'quote_currency': 'USD', 'description': 'SRM/USD', 'generic_symbol': 'SRMUSD', 'base': 'SRM'}
-PythPriceType.PRICE PythPriceStatus.UNKNOWN 4.23125 p/m 0.0019500000000000001
+PythPriceType.PRICE PythPriceStatus.UNKNOWN None p/m None
 ...
 ```
 

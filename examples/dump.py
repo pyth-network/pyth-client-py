@@ -13,7 +13,7 @@ from pythclient.solana import SOLANA_DEVNET_HTTP_ENDPOINT, SOLANA_DEVNET_WS_ENDP
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pythclient.pythclient import PythClient  # noqa
 from pythclient.ratelimit import RateLimit  # noqa
-from pythclient.pythaccounts import PythPriceAccount, PythPriceStatus  # noqa
+from pythclient.pythaccounts import PythPriceAccount  # noqa
 from pythclient.utils import get_key # noqa
 
 logger.enable("pythclient")
