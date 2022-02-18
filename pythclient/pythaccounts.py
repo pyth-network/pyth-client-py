@@ -195,6 +195,13 @@ class PythMappingAccount(PythAccount):
     def __str__(self) -> str:
         return f"PythMappingAccount ({self.key})"
 
+    def to_json(self):
+
+        return {
+            'entries': [str(x) for x in self.entries],
+            'next_account_key': str(self.next_account_key)
+        }
+
 
 class PythProductAccount(PythAccount):
     """
