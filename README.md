@@ -16,7 +16,7 @@ Install the library:
 
 You can then read the current Pyth price using the following:
 
-```
+```python
 from pythclient.pythclient import PythClient
 from pythclient.pythaccounts import PythPriceAccount
 from pythclient.utils import get_key
@@ -34,6 +34,7 @@ async with PythClient(
         for _, pr in prices.items():
             print(
                 pr.price_type,
+                pr.aggregate_price_status,
                 pr.aggregate_price,
                 "p/m",
                 pr.aggregate_price_confidence_interval,
@@ -44,11 +45,11 @@ This code snippet lists the products on pyth and the price for each product. Sam
 
 ```
 {'symbol': 'Crypto.ETH/USD', 'asset_type': 'Crypto', 'quote_currency': 'USD', 'description': 'ETH/USD', 'generic_symbol': 'ETHUSD', 'base': 'ETH'}
-PythPriceType.PRICE 4390.286 p/m 2.4331
+PythPriceType.PRICE PythPriceStatus.TRADING 4390.286 p/m 2.4331
 {'symbol': 'Crypto.SOL/USD', 'asset_type': 'Crypto', 'quote_currency': 'USD', 'description': 'SOL/USD', 'generic_symbol': 'SOLUSD', 'base': 'SOL'}
-PythPriceType.PRICE 192.27550000000002 p/m 0.0485
+PythPriceType.PRICE PythPriceStatus.TRADING 192.27550000000002 p/m 0.0485
 {'symbol': 'Crypto.SRM/USD', 'asset_type': 'Crypto', 'quote_currency': 'USD', 'description': 'SRM/USD', 'generic_symbol': 'SRMUSD', 'base': 'SRM'}
-PythPriceType.PRICE 4.23125 p/m 0.0019500000000000001
+PythPriceType.PRICE PythPriceStatus.UNKNOWN None p/m None
 ...
 ```
 

@@ -54,6 +54,7 @@ async def main():
                     pr.key,
                     pr.product_account_key,
                     pr.price_type,
+                    pr.aggregate_price_status,
                     pr.aggregate_price,
                     "p/m",
                     pr.aggregate_price_confidence_interval,
@@ -86,11 +87,12 @@ async def main():
                         print(
                             pr.product.symbol,
                             pr.price_type,
+                            pr.aggregate_price_status,
                             pr.aggregate_price,
                             "p/m",
                             pr.aggregate_price_confidence_interval,
                         )
-                        break
+                    break
 
         print("Unsubscribing...")
         if use_program:
