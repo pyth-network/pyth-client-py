@@ -427,7 +427,7 @@ class PythPriceInfo:
             "price": self.price,
             "confidence_interval": self.confidence_interval,
             "price_status": self.price_status.name,
-            "slot": self.slot,
+            "pub_slot": self.pub_slot,
             "exponent": self.exponent,
             "raw_confidence_interval": self.raw_confidence_interval,
             "raw_price": self.raw_price
