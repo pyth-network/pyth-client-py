@@ -37,20 +37,17 @@ class PythPriceStatus(Enum):
 class PythPriceType(Enum):
     UNKNOWN = 0
     PRICE = 1
-    # EMAP/VOL removed after V2
-    EMAP = 2
-    VOLATILITY = 3
 
 
-# Join time-weighted exponential moving average for EMAP and EMAC
-class TwEmaType(Enum):
+# Join exponential moving average for EMA price and EMA confidence
+class EmaType(Enum):
     UNKNOWN = 0
-    EMAPVALUE = 1
-    EMAPNUMERATOR = 2
-    EMAPDENOMINATOR = 3
-    EMACVALUE = 4
-    EMACNUMERATOR = 5
-    EMACDENOMINATOR = 6
+    EMA_PRICE_VALUE = 1
+    EMA_PRICE_NUMERATOR = 2
+    EMA_PRICE_DENOMINATOR = 3
+    EMA_CONFIDENCE_VALUE = 4
+    EMA_CONFIDENCE_NUMERATOR = 5
+    EMA_CONFIDENCE_DENOMINATOR = 6
 
 
 def _check_base64(format: str):
@@ -489,7 +486,7 @@ class PythPriceAccount(PythAccount):
         self.next_price_account_key: Optional[SolanaPublicKey] = None
         self.aggregate_price_info: Optional[PythPriceInfo] = None
         self.price_components: List[PythPriceComponent] = []
-        self.derivations: Dict[TwEmaType, int] = {}
+        self.derivations: Dict[EmaType, int] = {}
         self.min_publishers: Optional[int] = None
 
     @property
@@ -557,7 +554,7 @@ class PythPriceAccount(PythAccount):
             last_slot, valid_slot = struct.unpack_from("<QQ", buffer, offset)
             offset += 16  # QQ
             derivations = list(struct.unpack_from("<6q", buffer, offset))
-            self.derivations = dict((type_, derivations[type_.value - 1]) for type_ in [TwEmaType.EMACVALUE, TwEmaType.EMAPVALUE])
+            self.derivations = dict((type_, derivations[type_.value - 1]) for type_ in [EmaType.EMA_CONFIDENCE_VALUE, EmaType.EMA_PRICE_VALUE])
             offset += 48  # 6q
             # All drv*_ fields sans min_publishers are currently unused
             _, min_publishers = struct.unpack_from("<qQ", buffer, offset)
