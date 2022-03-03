@@ -37,20 +37,20 @@ class PythPriceStatus(Enum):
 class PythPriceType(Enum):
     UNKNOWN = 0
     PRICE = 1
-    # TWAP/VOL removed after V2
-    TWAP = 2
+    # EMAP/VOL removed after V2
+    EMAP = 2
     VOLATILITY = 3
 
 
-# Join time-weighted exponential moving average for TWAP and TWAC
+# Join time-weighted exponential moving average for EMAP and EMAC
 class TwEmaType(Enum):
     UNKNOWN = 0
-    TWAPVALUE = 1
-    TWAPNUMERATOR = 2
-    TWAPDENOMINATOR = 3
-    TWACVALUE = 4
-    TWACNUMERATOR = 5
-    TWACDENOMINATOR = 6
+    EMAPVALUE = 1
+    EMAPNUMERATOR = 2
+    EMAPDENOMINATOR = 3
+    EMACVALUE = 4
+    EMACNUMERATOR = 5
+    EMACDENOMINATOR = 6
 
 
 def _check_base64(format: str):
@@ -557,7 +557,7 @@ class PythPriceAccount(PythAccount):
             last_slot, valid_slot = struct.unpack_from("<QQ", buffer, offset)
             offset += 16  # QQ
             derivations = list(struct.unpack_from("<6q", buffer, offset))
-            self.derivations = dict((type_, derivations[type_.value - 1]) for type_ in [TwEmaType.TWACVALUE, TwEmaType.TWAPVALUE])
+            self.derivations = dict((type_, derivations[type_.value - 1]) for type_ in [TwEmaType.EMACVALUE, TwEmaType.EMAPVALUE])
             offset += 48  # 6q
             # All drv*_ fields sans min_publishers are currently unused
             _, min_publishers = struct.unpack_from("<qQ", buffer, offset)
