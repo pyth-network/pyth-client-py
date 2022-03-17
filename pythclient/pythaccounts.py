@@ -651,7 +651,7 @@ class PythPriceAccount(PythAccount):
             "next_price_account_key": str(self.next_price_account_key),
             "aggregate_price_info": self.aggregate_price_info.to_json(),
             "price_components": [x.to_json() for x in self.price_components],
-            "derivations": {TwEmaType(x).name: self.derivations.get(x) for x in list(self.derivations.keys())},
+            "derivations": {EmaType(x).name: self.derivations.get(x) for x in list(self.derivations.keys())},
             "min_publishers": self.min_publishers,
             "aggregate_price": self.aggregate_price,
             "aggregate_price_confidence_interval": self.aggregate_price_confidence_interval
