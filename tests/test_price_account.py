@@ -178,3 +178,22 @@ def test_price_account_get_aggregate_price_status_got_stale(
 
     price_status = price_account.aggregate_price_status
     assert price_status == PythPriceStatus.UNKNOWN
+
+def test_price_account_to_json(
+    price_account_bytes: bytes, price_account: PythPriceAccount
+):
+    price_account.update_from(buffer=price_account_bytes, version=2, offset=0)
+    price_account.slot = price_account.aggregate_price_info.pub_slot
+
+    # attributes which are not part of to_json
+    ignore_keys = {"aggregate_price", "aggregate_price_confidence_interval", "solana", "slot", "key", "lamports"}
+    must_contain_keys = {"aggregate_price", "aggregate_price_confidence_interval"}
+
+    keys_json = set(price_account.to_json().keys())
+    keys_orig = set(price_account.__dict__.keys())
+
+    # test for differences
+    assert keys_orig - ignore_keys == keys_json - ignore_keys
+
+    # test for missing keys
+    assert must_contain_keys.issubset(keys_json)
