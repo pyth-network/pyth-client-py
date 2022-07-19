@@ -90,3 +90,18 @@ def test_mapping_account_str(mapping_account, solana_client):
     actual = str(mapping_account)
     expected = f"PythMappingAccount ({mapping_account.key})"
     assert actual == expected
+
+
+def test_mapping_account_to_json(mapping_account, solana_client):
+
+    ignore_keys = {"key", "solana", "lamports", "slot"}
+    must_contain_keys = set()
+
+    keys_json = set(mapping_account.to_json().keys())
+    keys_orig = set(mapping_account.__dict__.keys())
+
+    # test for differences
+    assert keys_orig - ignore_keys == keys_json - ignore_keys
+
+    # test for missing keys
+    assert must_contain_keys.issubset(keys_json)
