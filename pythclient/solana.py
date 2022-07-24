@@ -195,17 +195,21 @@ class SolanaClient:
         await self.close()
 
     async def update_accounts(self, accounts: Sequence[SolanaAccount]) -> None:
-        resp = await self.get_account_info([account.key for account in accounts])
-        slot = resp["context"]["slot"]
-        values = resp["value"]
-        for account, value in zip(accounts, values):
-            if value is None:
-                logger.warning("got null value from Solana getMultipleAccounts for {}; non-existent account?", account.key)
-                continue
-            try:
-                account.update_with_rpc_response(slot, value)
-            except Exception as ex:
-                logger.exception("error while updating account {}", account.key, exception=ex)
+        # Solana's getMultipleAccounts RPC is limited to 100 accounts
+        # Hence we have to split them into groups of 100
+        # https://docs.solana.com/developing/clients/jsonrpc-api#getmultipleaccounts
+        for grouped_accounts in [accounts[i:i+100] for i in range(0, len(accounts), 100)]:
+            resp = await self.get_account_info([account.key for account in grouped_accounts])
+            slot = resp["context"]["slot"]
+            values = resp["value"]
+            for account, value in zip(grouped_accounts, values):
+                if value is None:
+                    logger.warning("got null value from Solana getMultipleAccounts for {}; non-existent account?", account.key)
+                    continue
+                try:
+                    account.update_with_rpc_response(slot, value)
+                except Exception as ex:
+                    logger.exception("error while updating account {}", account.key, exception=ex)
 
     async def http_send(self, method: str, params: Optional[List[Any]] = None, *, return_error: bool = False) -> Any:
         if self.ratelimit:
