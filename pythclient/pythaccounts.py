@@ -487,7 +487,9 @@ class PythPriceAccount(PythAccount):
         self.aggregate_price_info: Optional[PythPriceInfo] = None
         self.price_components: List[PythPriceComponent] = []
         self.derivations: Dict[EmaType, int] = {}
+        self.timestamp: int = 0  # unix timestamp in seconds
         self.min_publishers: Optional[int] = None
+        self.prev_timestamp: int = 0  # unix timestamp in seconds
 
     @property
     def aggregate_price(self) -> Optional[float]:
@@ -552,15 +554,17 @@ class PythPriceAccount(PythAccount):
             price_type, exponent, num_components = struct.unpack_from("<IiI", buffer, offset)
             offset += 16  # struct.calcsize("IiII") (last I is the number of quoters that make up the aggregate)
             last_slot, valid_slot = struct.unpack_from("<QQ", buffer, offset)
-            offset += 16  # QQ
+            offset += 16  # struct.calcsize("QQ")
             derivations = list(struct.unpack_from("<6q", buffer, offset))
             self.derivations = dict((type_, derivations[type_.value - 1]) for type_ in [EmaType.EMA_CONFIDENCE_VALUE, EmaType.EMA_PRICE_VALUE])
-            offset += 48  # 6q
-            # All drv*_ fields sans min_publishers are currently unused
-            _, min_publishers = struct.unpack_from("<qQ", buffer, offset)
-            offset += 16  # <qQ
+            offset += 48  # struct.calcsize("6q")
+            # drv[2-4]_ fields are currently unused
+            timestamp, min_publishers = struct.unpack_from("<qB", buffer, offset)
+            offset += 16  # struct.calcsize("qBbhi") ("bhi" is drv_2, drv_3, drv_4)
             product_account_key_bytes, next_price_account_key_bytes = struct.unpack_from("32s32s", buffer, offset)
-            offset += 96  # 32s32s32s
+            offset += 88  # struct.calcsize("32s32sQqQ") ("QqQ" is prev_slot, prev_price, prev_conf)
+            prev_timestamp = struct.unpack_from("<q", buffer, offset)[0]
+            offset += 8  # struct.calcsize("q")
         elif version == _VERSION_1:
             price_type, exponent, num_components, _, last_slot, valid_slot, product_account_key_bytes, next_price_account_key_bytes, aggregator_key_bytes = struct.unpack_from(
                 "<IiIIQQ32s32s32s", buffer, offset)
@@ -595,7 +599,9 @@ class PythPriceAccount(PythAccount):
             next_price_account_key_bytes)
         self.aggregate_price_info = aggregate_price_info
         self.price_components = price_components
+        self.timestamp = timestamp
         self.min_publishers = min_publishers
+        self.prev_timestamp = prev_timestamp
 
     def __str__(self) -> str:
         if self.product:
