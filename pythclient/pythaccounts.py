@@ -489,6 +489,9 @@ class PythPriceAccount(PythAccount):
         self.derivations: Dict[EmaType, int] = {}
         self.timestamp: int = 0  # unix timestamp in seconds
         self.min_publishers: Optional[int] = None
+        self.prev_slot: int = 0
+        self.prev_price: float = field(init=False)
+        self.prev_conf: float = field(init=False)
         self.prev_timestamp: int = 0  # unix timestamp in seconds
 
     @property
@@ -512,7 +515,7 @@ class PythPriceAccount(PythAccount):
             return self.aggregate_price_info.confidence_interval
         else:
             return None
-    
+   
     @property
     def aggregate_price_status(self) -> Optional[PythPriceStatus]:
         """The aggregate price status."""
@@ -562,9 +565,11 @@ class PythPriceAccount(PythAccount):
             timestamp, min_publishers = struct.unpack_from("<qB", buffer, offset)
             offset += 16  # struct.calcsize("qBbhi") ("bhi" is drv_2, drv_3, drv_4)
             product_account_key_bytes, next_price_account_key_bytes = struct.unpack_from("32s32s", buffer, offset)
-            offset += 88  # struct.calcsize("32s32sQqQ") ("QqQ" is prev_slot, prev_price, prev_conf)
-            prev_timestamp = struct.unpack_from("<q", buffer, offset)[0]
-            offset += 8  # struct.calcsize("q")
+            offset += 64  # struct.calcsize("32s32s")
+            prev_slot, prev_price, prev_conf, prev_timestamp = struct.unpack_from("<QqQq", buffer, offset)
+            offset += 32  # struct.calcsize("QqQq")
+            prev_price *= (10 ** exponent)
+            prev_conf *= (10 ** exponent)
         elif version == _VERSION_1:
             price_type, exponent, num_components, _, last_slot, valid_slot, product_account_key_bytes, next_price_account_key_bytes, aggregator_key_bytes = struct.unpack_from(
                 "<IiIIQQ32s32s32s", buffer, offset)
@@ -601,6 +606,9 @@ class PythPriceAccount(PythAccount):
         self.price_components = price_components
         self.timestamp = timestamp
         self.min_publishers = min_publishers
+        self.prev_slot = prev_slot
+        self.prev_price = prev_price
+        self.prev_conf = prev_conf
         self.prev_timestamp = prev_timestamp
 
     def __str__(self) -> str:
