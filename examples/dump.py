@@ -8,7 +8,7 @@ import sys
 from typing import List, Any
 
 from loguru import logger
-from pythclient.solana import SOLANA_DEVNET_HTTP_ENDPOINT, SOLANA_DEVNET_WS_ENDPOINT, PYTHNET_HTTP_ENDPOINT, PYTHNET_WS_ENDPOINT
+from pythclient.solana import PYTHNET_HTTP_ENDPOINT, PYTHNET_WS_ENDPOINT
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pythclient.pythclient import PythClient  # noqa

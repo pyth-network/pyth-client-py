@@ -3,7 +3,7 @@
 import asyncio
 
 from pythclient.pythaccounts import PythPriceAccount, PythPriceStatus
-from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_DEVNET_HTTP_ENDPOINT, SOLANA_DEVNET_WS_ENDPOINT, PYTHNET_HTTP_ENDPOINT, PYTHNET_WS_ENDPOINT
+from pythclient.solana import SolanaClient, SolanaPublicKey, PYTHNET_HTTP_ENDPOINT, PYTHNET_WS_ENDPOINT
 
 async def get_price():
     # pythnet DOGE/USD price account key (available on pyth.network website)
