@@ -17,6 +17,7 @@ def get_key(network: str, type: str, version: str = DEFAULT_VERSION) -> Optional
         devnet-program-v2.pyth.network
         mainnet-program-v2.pyth.network
         testnet-mapping-v2.pyth.network
+        pythnet-mapping-v2.pyth.network
     """
     url = f"{network}-{type}-{version}.pyth.network"
     try:

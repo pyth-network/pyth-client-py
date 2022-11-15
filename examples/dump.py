@@ -8,7 +8,7 @@ import sys
 from typing import List, Any
 
 from loguru import logger
-from pythclient.solana import SOLANA_DEVNET_HTTP_ENDPOINT, SOLANA_DEVNET_WS_ENDPOINT
+from pythclient.solana import SOLANA_DEVNET_HTTP_ENDPOINT, SOLANA_DEVNET_WS_ENDPOINT, PYTHNET_HTTP_ENDPOINT, PYTHNET_WS_ENDPOINT
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pythclient.pythclient import PythClient  # noqa
@@ -34,13 +34,13 @@ signal.signal(signal.SIGINT, set_to_exit)
 async def main():
     global to_exit
     use_program = len(sys.argv) >= 2 and sys.argv[1] == "program"
-    v2_first_mapping_account_key = get_key("devnet", "mapping")
-    v2_program_key = get_key("devnet", "program")
+    v2_first_mapping_account_key = get_key("pythnet", "mapping")
+    v2_program_key = get_key("pythnet", "program")
     async with PythClient(
         first_mapping_account_key=v2_first_mapping_account_key,
         program_key=v2_program_key if use_program else None,
-        solana_endpoint=SOLANA_DEVNET_HTTP_ENDPOINT, # replace with the relevant cluster endpoints
-        solana_ws_endpoint=SOLANA_DEVNET_WS_ENDPOINT # replace with the relevant cluster endpoints
+        solana_endpoint=PYTHNET_HTTP_ENDPOINT, # replace with the relevant cluster endpoints
+        solana_ws_endpoint=PYTHNET_WS_ENDPOINT # replace with the relevant cluster endpoints
     ) as c:
         await c.refresh_all_prices()
         products = await c.get_products()
