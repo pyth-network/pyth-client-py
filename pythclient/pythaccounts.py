@@ -32,6 +32,7 @@ class PythPriceStatus(Enum):
     TRADING = 1
     HALTED = 2
     AUCTION = 3
+    IGNORED = 4
 
 
 class PythPriceType(Enum):
