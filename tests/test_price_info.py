@@ -20,6 +20,21 @@ def price_info_trading_bytes():
     return base64.b64decode(b'EKH74A0AAABkU5ECAAAAAAEAAAAAAAAAQchHBgAAAAA=')
 
 
+@pytest.fixture
+def price_info_ignored():
+    return PythPriceInfo(
+        raw_price=59609162000,
+        raw_confidence_interval=43078500,
+        price_status=PythPriceStatus.IGNORED,
+        pub_slot=105367617,
+        exponent=-8,
+    )
+
+
+@pytest.fixture
+def price_info_ignored_bytes():
+    return base64.b64decode(b'EKH74A0AAABkU5ECAAAAAAQAAAAAAAAAQchHBgAAAAA=')
+
 @pytest.mark.parametrize(
     "raw_price,raw_confidence_interval,price_status,pub_slot,exponent,price,confidence_interval",
     [
@@ -88,13 +103,22 @@ class TestPythPriceInfo:
         assert actual == expected
 
 
-def test_price_info_deserialise(price_info_trading, price_info_trading_bytes):
+def test_price_info_deserialise_trading(price_info_trading, price_info_trading_bytes):
     actual = PythPriceInfo.deserialise(
         buffer=price_info_trading_bytes,
         offset=0,
         exponent=price_info_trading.exponent,
     )
     assert asdict(actual) == asdict(price_info_trading)
+
+
+def test_price_info_deserialise_ignored(price_info_ignored, price_info_ignored_bytes):
+    actual = PythPriceInfo.deserialise(
+        buffer=price_info_ignored_bytes,
+        offset=0,
+        exponent=price_info_ignored.exponent,
+    )
+    assert asdict(actual) == asdict(price_info_ignored)
 
 
 def test_price_info_str(price_info_trading):
