@@ -37,7 +37,7 @@ FX_METAL_HOLIDAYS = [
 ]
 
 
-def is_market_open(asset_type: str, dt: datetime.datetime):
+def is_market_open(asset_type: str, dt: datetime.datetime) -> bool:
     day, date, time = dt.weekday(), dt.date(), dt.time()
 
     if asset_type == "equity":
@@ -70,3 +70,51 @@ def is_market_open(asset_type: str, dt: datetime.datetime):
 
     # all other markets (crypto)
     return True
+
+
+def get_next_market_open(asset_type: str, dt: datetime.datetime) -> str:
+    time = dt.time()
+
+    if is_market_open(asset_type, dt):
+        return dt.astimezone(pytz.UTC).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+
+    if asset_type == "equity":
+        if time < EQUITY_OPEN:
+            next_market_open = dt.replace(
+                hour=EQUITY_OPEN.hour,
+                minute=EQUITY_OPEN.minute,
+                second=0,
+                microsecond=0,
+            )
+        else:
+            next_market_open = dt.replace(
+                hour=EQUITY_OPEN.hour,
+                minute=EQUITY_OPEN.minute,
+                second=0,
+                microsecond=0,
+            )
+            next_market_open += datetime.timedelta(days=1)
+    elif asset_type in ["fx", "metal"]:
+        if time < FX_METAL_OPEN_CLOSE_TIME:
+            next_market_open = dt.replace(
+                hour=FX_METAL_OPEN_CLOSE_TIME.hour,
+                minute=FX_METAL_OPEN_CLOSE_TIME.minute,
+                second=0,
+                microsecond=0,
+            )
+        else:
+            next_market_open = dt.replace(
+                hour=FX_METAL_OPEN_CLOSE_TIME.hour,
+                minute=FX_METAL_OPEN_CLOSE_TIME.minute,
+                second=0,
+                microsecond=0,
+            )
+            next_market_open += datetime.timedelta(days=1)
+    else:
+        next_market_open = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        next_market_open += datetime.timedelta(days=1)
+
+    while not is_market_open(asset_type, next_market_open):
+        next_market_open += datetime.timedelta(days=1)
+
+    return next_market_open.astimezone(pytz.UTC).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
