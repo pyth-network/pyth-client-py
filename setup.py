@@ -1,13 +1,13 @@
 from setuptools import setup
 
-requirements = ['aiodns', 'aiohttp>=3.7.4', 'backoff', 'base58', 'dnspython', 'flake8', 'loguru', 'typing-extensions']
+requirements = ['aiodns', 'aiohttp>=3.7.4', 'backoff', 'base58', 'dnspython', 'flake8', 'loguru', 'typing-extensions', 'pytz']
 
 with open('README.md', 'r', encoding='utf-8') as fh:
     long_description = fh.read()
 
 setup(
     name='pythclient',
-    version='0.1.4',
+    version='0.1.5',
     packages=['pythclient'],
     author='Pyth Developers',
     author_email='contact@pyth.network',
