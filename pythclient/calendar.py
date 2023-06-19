@@ -73,6 +73,8 @@ def is_market_open(asset_type: str, dt: datetime.datetime) -> bool:
 
 
 def get_next_market_open(asset_type: str, dt: datetime.datetime) -> str:
+    # make sure time is in NY timezone
+    dt = dt.astimezone(NY_TZ)
     time = dt.time()
 
     if is_market_open(asset_type, dt):
@@ -120,6 +122,8 @@ def get_next_market_open(asset_type: str, dt: datetime.datetime) -> str:
     return next_market_open.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
 
 def get_next_market_close(asset_type: str, dt: datetime.datetime) -> str:
+    # make sure time is in NY timezone
+    dt = dt.astimezone(NY_TZ)
     if not is_market_open(asset_type, dt):
         return dt.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
 
