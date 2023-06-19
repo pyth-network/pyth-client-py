@@ -1,43 +1,45 @@
 import datetime
+from zoneinfo import ZoneInfo
 
-import pytz
+NY_TZ = ZoneInfo("America/New_York")
+UTC_TZ = ZoneInfo("UTC")
 
-TZ = pytz.timezone("America/New_York")
-
-EQUITY_OPEN = datetime.time(9, 30, 0, tzinfo=TZ)
-EQUITY_CLOSE = datetime.time(16, 0, 0, tzinfo=TZ)
-EQUITY_EARLY_CLOSE = datetime.time(13, 0, 0, tzinfo=TZ)
+EQUITY_OPEN = datetime.time(9, 30, 0, tzinfo=NY_TZ)
+EQUITY_CLOSE = datetime.time(16, 0, 0, tzinfo=NY_TZ)
+EQUITY_EARLY_CLOSE = datetime.time(13, 0, 0, tzinfo=NY_TZ)
 
 # EQUITY_HOLIDAYS and EQUITY_EARLY_HOLIDAYS will need to be updated each year
 # From https://www.nyse.com/markets/hours-calendars
 EQUITY_HOLIDAYS = [
-    datetime.datetime(2023, 1, 2, tzinfo=TZ).date(),
-    datetime.datetime(2023, 1, 16, tzinfo=TZ).date(),
-    datetime.datetime(2023, 2, 20, tzinfo=TZ).date(),
-    datetime.datetime(2023, 4, 7, tzinfo=TZ).date(),
-    datetime.datetime(2023, 5, 29, tzinfo=TZ).date(),
-    datetime.datetime(2023, 6, 19, tzinfo=TZ).date(),
-    datetime.datetime(2023, 7, 4, tzinfo=TZ).date(),
-    datetime.datetime(2022, 9, 4, tzinfo=TZ).date(),
-    datetime.datetime(2023, 11, 23, tzinfo=TZ).date(),
-    datetime.datetime(2023, 12, 25, tzinfo=TZ).date(),
+    datetime.datetime(2023, 1, 2, tzinfo=NY_TZ).date(),
+    datetime.datetime(2023, 1, 16, tzinfo=NY_TZ).date(),
+    datetime.datetime(2023, 2, 20, tzinfo=NY_TZ).date(),
+    datetime.datetime(2023, 4, 7, tzinfo=NY_TZ).date(),
+    datetime.datetime(2023, 5, 29, tzinfo=NY_TZ).date(),
+    datetime.datetime(2023, 6, 19, tzinfo=NY_TZ).date(),
+    datetime.datetime(2023, 7, 4, tzinfo=NY_TZ).date(),
+    datetime.datetime(2022, 9, 4, tzinfo=NY_TZ).date(),
+    datetime.datetime(2023, 11, 23, tzinfo=NY_TZ).date(),
+    datetime.datetime(2023, 12, 25, tzinfo=NY_TZ).date(),
 ]
 EQUITY_EARLY_HOLIDAYS = [
-    datetime.datetime(2023, 7, 3, tzinfo=TZ).date(),
-    datetime.datetime(2023, 11, 24, tzinfo=TZ).date(),
+    datetime.datetime(2023, 7, 3, tzinfo=NY_TZ).date(),
+    datetime.datetime(2023, 11, 24, tzinfo=NY_TZ).date(),
 ]
 
-FX_METAL_OPEN_CLOSE_TIME = datetime.time(17, 0, 0, tzinfo=TZ)
+FX_METAL_OPEN_CLOSE_TIME = datetime.time(17, 0, 0, tzinfo=NY_TZ)
 
 # FX_METAL_HOLIDAYS will need to be updated each year
 # From https://www.cboe.com/about/hours/fx/
 FX_METAL_HOLIDAYS = [
-    datetime.datetime(2023, 1, 1, tzinfo=TZ).date(),
-    datetime.datetime(2023, 12, 25, tzinfo=TZ).date(),
+    datetime.datetime(2023, 1, 1, tzinfo=NY_TZ).date(),
+    datetime.datetime(2023, 12, 25, tzinfo=NY_TZ).date(),
 ]
 
 
 def is_market_open(asset_type: str, dt: datetime.datetime) -> bool:
+    # make sure time is in NY timezone
+    dt = dt.astimezone(NY_TZ)
     day, date, time = dt.weekday(), dt.date(), dt.time()
 
     if asset_type == "equity":
@@ -73,10 +75,12 @@ def is_market_open(asset_type: str, dt: datetime.datetime) -> bool:
 
 
 def get_next_market_open(asset_type: str, dt: datetime.datetime) -> str:
+    # make sure time is in NY timezone
+    dt = dt.astimezone(NY_TZ)
     time = dt.time()
 
     if is_market_open(asset_type, dt):
-        return dt.astimezone(pytz.UTC).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+        return dt.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
 
     if asset_type == "equity":
         if time < EQUITY_OPEN:
@@ -117,4 +121,38 @@ def get_next_market_open(asset_type: str, dt: datetime.datetime) -> str:
     while not is_market_open(asset_type, next_market_open):
         next_market_open += datetime.timedelta(days=1)
 
-    return next_market_open.astimezone(pytz.UTC).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    return next_market_open.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+
+def get_next_market_close(asset_type: str, dt: datetime.datetime) -> str:
+    # make sure time is in NY timezone
+    dt = dt.astimezone(NY_TZ)
+    if not is_market_open(asset_type, dt):
+        return dt.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+
+    if asset_type == "equity":
+        if dt.date() in EQUITY_EARLY_HOLIDAYS:
+            
+            next_market_close = dt.replace(
+                hour=EQUITY_EARLY_CLOSE.hour,
+                minute=EQUITY_EARLY_CLOSE.minute,
+                second=0,
+                microsecond=0,
+            )
+        else:
+            next_market_close = dt.replace(
+                hour=EQUITY_CLOSE.hour,
+                minute=EQUITY_CLOSE.minute,
+                second=0,
+                microsecond=0,
+            )
+    elif asset_type in ["fx", "metal"]:
+        next_market_close = dt.replace(
+            hour=FX_METAL_OPEN_CLOSE_TIME.hour,
+            minute=FX_METAL_OPEN_CLOSE_TIME.minute,
+            second=0,
+            microsecond=0,
+        )
+    else: # crypto markets never close
+        return None
+
+    return next_market_close.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
