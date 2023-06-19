@@ -38,6 +38,8 @@ FX_METAL_HOLIDAYS = [
 
 
 def is_market_open(asset_type: str, dt: datetime.datetime) -> bool:
+    # make sure time is in NY timezone
+    dt = dt.astimezone(NY_TZ)
     day, date, time = dt.weekday(), dt.date(), dt.time()
 
     if asset_type == "equity":
