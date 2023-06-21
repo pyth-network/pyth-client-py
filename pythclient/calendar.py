@@ -79,9 +79,6 @@ def get_next_market_open(asset_type: str, dt: datetime.datetime) -> str:
     dt = dt.astimezone(NY_TZ)
     time = dt.time()
 
-    if is_market_open(asset_type, dt):
-        return dt.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
-
     if asset_type == "equity":
         if time < EQUITY_OPEN:
             next_market_open = dt.replace(
@@ -123,11 +120,10 @@ def get_next_market_open(asset_type: str, dt: datetime.datetime) -> str:
 
     return next_market_open.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
 
+
 def get_next_market_close(asset_type: str, dt: datetime.datetime) -> str:
     # make sure time is in NY timezone
     dt = dt.astimezone(NY_TZ)
-    if not is_market_open(asset_type, dt):
-        return dt.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
 
     if asset_type == "equity":
         if dt.date() in EQUITY_EARLY_HOLIDAYS:
@@ -145,6 +141,8 @@ def get_next_market_close(asset_type: str, dt: datetime.datetime) -> str:
                 second=0,
                 microsecond=0,
             )
+        if dt >= next_market_close:
+            next_market_close += datetime.timedelta(days=1)
     elif asset_type in ["fx", "metal"]:
         next_market_close = dt.replace(
             hour=FX_METAL_OPEN_CLOSE_TIME.hour,
@@ -152,7 +150,12 @@ def get_next_market_close(asset_type: str, dt: datetime.datetime) -> str:
             second=0,
             microsecond=0,
         )
+        if dt >= next_market_close:
+            next_market_close += datetime.timedelta(days=1)
     else: # crypto markets never close
         return None
+
+    while not is_market_open(asset_type, next_market_close):
+        next_market_close += datetime.timedelta(days=1)
 
     return next_market_close.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
