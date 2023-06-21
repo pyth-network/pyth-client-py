@@ -112,8 +112,7 @@ def get_next_market_open(asset_type: str, dt: datetime.datetime) -> str:
             )
             next_market_open += datetime.timedelta(days=1)
     else:
-        next_market_open = dt.replace(hour=0, minute=0, second=0, microsecond=0)
-        next_market_open += datetime.timedelta(days=1)
+        return None
 
     while not is_market_open(asset_type, next_market_open):
         next_market_open += datetime.timedelta(days=1)
@@ -159,3 +158,5 @@ def get_next_market_close(asset_type: str, dt: datetime.datetime) -> str:
         next_market_close += datetime.timedelta(days=1)
 
     return next_market_close.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+
+print(get_next_market_close("equity", datetime.datetime.now()))
