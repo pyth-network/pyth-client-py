@@ -28,5 +28,5 @@ setup(
         'testing': requirements + ['mock', 'pytest', 'pytest-cov', 'pytest-socket',
                                    'pytest-mock', 'pytest-asyncio'],
     },
-    python_requires='>=3.7.0',
+    python_requires='>=3.9.0',
 )
