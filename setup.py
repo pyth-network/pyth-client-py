@@ -7,7 +7,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setup(
     name='pythclient',
-    version='0.1.6',
+    version='0.1.7',
     packages=['pythclient'],
     author='Pyth Developers',
     author_email='contact@pyth.network',
@@ -28,5 +28,5 @@ setup(
         'testing': requirements + ['mock', 'pytest', 'pytest-cov', 'pytest-socket',
                                    'pytest-mock', 'pytest-asyncio'],
     },
-    python_requires='>=3.7.0',
+    python_requires='>=3.9.0',
 )
