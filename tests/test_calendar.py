@@ -27,19 +27,7 @@ CRYPTO_OPEN_SUN_2023_6_18_12 = datetime.datetime(2023, 6, 18, 12, 0, 0, tzinfo=N
 def format_datetime_to_utc_iso_string(dt: datetime.datetime):
     return dt.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
 
-def test_is_market_open(
-    EQUITY_OPEN_WED_2023_6_21_12,
-    EQUITY_CLOSE_WED_2023_6_21_17,
-    EQUITY_CLOSE_SAT_2023_6_10_17,
-    EQUITY_HOLIDAY_MON_2023_6_19,
-    EQUITY_EARLY_CLOSE_OPEN_FRI_2023_11_24_14,
-    EQUITY_EARLY_CLOSE_CLOSE_FRI_2023_11_24_14,
-    FX_METAL_OPEN_WED_2023_6_21_22,
-    FX_METAL_CLOSE_SUN_2023_6_18_16,
-    FX_METAL_HOLIDAY_SUN_2023_1_1,
-    CRYPTO_OPEN_WED_2023_6_21_12,
-    CRYPTO_OPEN_SUN_2023_6_18_12,
-):
+def test_is_market_open():
     # equity
     # weekday, within equity market hours
     assert is_market_open("equity", EQUITY_OPEN_WED_2023_6_21_12) == True
@@ -75,19 +63,7 @@ def test_is_market_open(
     assert is_market_open("crypto", CRYPTO_OPEN_SUN_2023_6_18_12) == True
 
 
-def test_get_next_market_open(
-    EQUITY_OPEN_WED_2023_6_21_12,
-    EQUITY_CLOSE_WED_2023_6_21_17,
-    EQUITY_CLOSE_SAT_2023_6_10_17,
-    EQUITY_HOLIDAY_MON_2023_6_19,
-    EQUITY_EARLY_CLOSE_OPEN_FRI_2023_11_24_14,
-    EQUITY_EARLY_CLOSE_CLOSE_FRI_2023_11_24_14,
-    FX_METAL_OPEN_WED_2023_6_21_22,
-    FX_METAL_CLOSE_SUN_2023_6_18_16,
-    FX_METAL_HOLIDAY_SUN_2023_1_1,
-    CRYPTO_OPEN_WED_2023_6_21_12,
-    CRYPTO_OPEN_SUN_2023_6_18_12,
-):
+def test_get_next_market_open():
     # equity within market hours
     assert (
         get_next_market_open("equity", EQUITY_OPEN_WED_2023_6_21_12)
@@ -157,19 +133,7 @@ def test_get_next_market_open(
     assert get_next_market_open("crypto", CRYPTO_OPEN_SUN_2023_6_18_12) == None
 
 
-def test_get_next_market_close(
-    EQUITY_OPEN_WED_2023_6_21_12,
-    EQUITY_CLOSE_WED_2023_6_21_17,
-    EQUITY_CLOSE_SAT_2023_6_10_17,
-    EQUITY_HOLIDAY_MON_2023_6_19,
-    EQUITY_EARLY_CLOSE_OPEN_FRI_2023_11_24_14,
-    EQUITY_EARLY_CLOSE_CLOSE_FRI_2023_11_24_14,
-    FX_METAL_OPEN_WED_2023_6_21_22,
-    FX_METAL_CLOSE_SUN_2023_6_18_16,
-    FX_METAL_HOLIDAY_SUN_2023_1_1,
-    CRYPTO_OPEN_WED_2023_6_21_12,
-    CRYPTO_OPEN_SUN_2023_6_18_12,
-):
+def test_get_next_market_close():
     # equity within market hours
     assert (
         get_next_market_close("equity", EQUITY_OPEN_WED_2023_6_21_12)
