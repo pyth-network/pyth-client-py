@@ -74,7 +74,7 @@ def is_market_open(asset_type: str, dt: datetime.datetime) -> bool:
     return True
 
 
-def get_next_market_open(asset_type: str, dt: datetime.datetime) -> str:
+def get_next_market_open(asset_type: str, dt: datetime.datetime) -> int:
     # make sure time is in NY timezone
     dt = dt.astimezone(NY_TZ)
     time = dt.time()
@@ -119,10 +119,10 @@ def get_next_market_open(asset_type: str, dt: datetime.datetime) -> str:
     while not is_market_open(asset_type, next_market_open):
         next_market_open += datetime.timedelta(days=1)
 
-    return next_market_open.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    return int(next_market_open.timestamp())
 
 
-def get_next_market_close(asset_type: str, dt: datetime.datetime) -> str:
+def get_next_market_close(asset_type: str, dt: datetime.datetime) -> int:
     # make sure time is in NY timezone
     dt = dt.astimezone(NY_TZ)
     time = dt.time()
@@ -148,16 +148,12 @@ def get_next_market_close(asset_type: str, dt: datetime.datetime) -> str:
             next_market_open = get_next_market_open(
                 asset_type, dt + datetime.timedelta(days=1)
             )
-            next_market_close = (
-                datetime.datetime.fromisoformat(next_market_open.replace("Z", "+00:00"))
-                .astimezone(NY_TZ)
-                .replace(
+            next_market_close = datetime.datetime.fromtimestamp(next_market_open).astimezone(NY_TZ).replace(
                     hour=EQUITY_CLOSE.hour,
                     minute=EQUITY_CLOSE.minute,
                     second=0,
                     microsecond=0,
                 )
-            )
         else:
             next_market_close = dt.replace(
                 hour=EQUITY_CLOSE.hour,
@@ -189,4 +185,4 @@ def get_next_market_close(asset_type: str, dt: datetime.datetime) -> str:
     else:  # crypto markets never close
         return None
 
-    return next_market_close.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    return int(next_market_close.timestamp())
