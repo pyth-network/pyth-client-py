@@ -24,8 +24,12 @@ FX_METAL_HOLIDAY_SUN_2023_1_1 = datetime.datetime(2023, 1, 1, tzinfo=NY_TZ)
 CRYPTO_OPEN_WED_2023_6_21_12 = datetime.datetime(2023, 6, 21, 12, 0, 0, tzinfo=NY_TZ)
 CRYPTO_OPEN_SUN_2023_6_18_12 = datetime.datetime(2023, 6, 18, 12, 0, 0, tzinfo=NY_TZ)
 
-def format_datetime_to_utc_iso_string(dt: datetime.datetime):
-    return dt.astimezone(UTC_TZ).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+
+def format_datetime_to_unix_timestamp(dt: datetime.datetime):
+    # Convert the datetime object to a Unix timestamp in UTC
+    timestamp = dt.astimezone(UTC_TZ).timestamp()
+    unix_timestamp_utc = int(timestamp)
+    return unix_timestamp_utc
 
 def test_is_market_open():
     # equity
@@ -67,65 +71,65 @@ def test_get_next_market_open():
     # equity within market hours
     assert (
         get_next_market_open("equity", EQUITY_OPEN_WED_2023_6_21_12)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 22, 9, 30, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 22, 9, 30, 0, tzinfo=NY_TZ))
     )
 
     # equity out of market hours
     assert (
         get_next_market_open("equity", EQUITY_CLOSE_WED_2023_6_21_17)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 22, 9, 30, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 22, 9, 30, 0, tzinfo=NY_TZ))
     )
 
     # equity weekend
     assert (
         get_next_market_open("equity", EQUITY_CLOSE_SAT_2023_6_10_17)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 12, 9, 30, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 12, 9, 30, 0, tzinfo=NY_TZ))
     )
 
     # equity holiday
     assert (
         get_next_market_open("equity", EQUITY_HOLIDAY_MON_2023_6_19)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 20, 9, 30, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 20, 9, 30, 0, tzinfo=NY_TZ))
     )
 
     # equity early close holiday
     assert (
         get_next_market_open("equity", EQUITY_EARLY_CLOSE_OPEN_FRI_2023_11_24_14)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 11, 27, 9, 30, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 11, 27, 9, 30, 0, tzinfo=NY_TZ))
     )
     assert (
         get_next_market_open("equity", EQUITY_EARLY_CLOSE_CLOSE_FRI_2023_11_24_14)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 11, 27, 9, 30, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 11, 27, 9, 30, 0, tzinfo=NY_TZ))
     )
 
     # fx & metal within market hours
     assert (
         get_next_market_open("fx", FX_METAL_OPEN_WED_2023_6_21_22)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 25, 17, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 25, 17, 0, 0, tzinfo=NY_TZ))
     )
     assert (
         get_next_market_open("metal", FX_METAL_OPEN_WED_2023_6_21_22)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 25, 17, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 25, 17, 0, 0, tzinfo=NY_TZ))
     )
 
     # fx & metal out of market hours
     assert (
         get_next_market_open("fx", FX_METAL_CLOSE_SUN_2023_6_18_16)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 18, 17, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 18, 17, 0, 0, tzinfo=NY_TZ))
     )
     assert (
         get_next_market_open("metal", FX_METAL_CLOSE_SUN_2023_6_18_16)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 18, 17, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 18, 17, 0, 0, tzinfo=NY_TZ))
     )
 
     # fx & metal holiday
     assert (
         get_next_market_open("fx", FX_METAL_HOLIDAY_SUN_2023_1_1)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 1, 2, 17, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 1, 2, 17, 0, 0, tzinfo=NY_TZ))
     )
     assert (
         get_next_market_open("metal", FX_METAL_HOLIDAY_SUN_2023_1_1)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 1, 2, 17, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 1, 2, 17, 0, 0, tzinfo=NY_TZ))
     )
 
     # crypto
@@ -137,65 +141,65 @@ def test_get_next_market_close():
     # equity within market hours
     assert (
         get_next_market_close("equity", EQUITY_OPEN_WED_2023_6_21_12)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 21, 16, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 21, 16, 0, 0, tzinfo=NY_TZ))
     )
 
     # equity out of market hours
     assert (
         get_next_market_close("equity", EQUITY_CLOSE_WED_2023_6_21_17)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 22, 16, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 22, 16, 0, 0, tzinfo=NY_TZ))
     )
 
     # equity weekend
     assert (
         get_next_market_close("equity", EQUITY_CLOSE_SAT_2023_6_10_17)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 12, 16, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 12, 16, 0, 0, tzinfo=NY_TZ))
     )
 
     # equity holiday
     assert (
         get_next_market_close("equity", EQUITY_HOLIDAY_MON_2023_6_19)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 20, 16, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 20, 16, 0, 0, tzinfo=NY_TZ))
     )
 
     # equity early close holiday
     assert (
         get_next_market_close("equity", EQUITY_EARLY_CLOSE_OPEN_FRI_2023_11_24_14)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 11, 24, 13, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 11, 24, 13, 0, 0, tzinfo=NY_TZ))
     )
     assert (
         get_next_market_close("equity", EQUITY_EARLY_CLOSE_CLOSE_FRI_2023_11_24_14)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 11, 27, 16, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 11, 27, 16, 0, 0, tzinfo=NY_TZ))
     )
 
     # fx & metal within market hours
     assert (
         get_next_market_close("fx", FX_METAL_OPEN_WED_2023_6_21_22)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 23, 17, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 23, 17, 0, 0, tzinfo=NY_TZ))
     )
     assert (
         get_next_market_close("metal", FX_METAL_OPEN_WED_2023_6_21_22)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 23, 17, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 23, 17, 0, 0, tzinfo=NY_TZ))
     )
 
     # fx & metal out of market hours
     assert (
         get_next_market_close("fx", FX_METAL_CLOSE_SUN_2023_6_18_16)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 23, 17, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 23, 17, 0, 0, tzinfo=NY_TZ))
     )
     assert (
         get_next_market_close("metal", FX_METAL_CLOSE_SUN_2023_6_18_16)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 6, 23, 17, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 23, 17, 0, 0, tzinfo=NY_TZ))
     )
 
     # fx & metal holiday
     assert (
         get_next_market_close("fx", FX_METAL_HOLIDAY_SUN_2023_1_1)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 1, 6, 17, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 1, 6, 17, 0, 0, tzinfo=NY_TZ))
     )
     assert (
         get_next_market_close("metal", FX_METAL_HOLIDAY_SUN_2023_1_1)
-        == format_datetime_to_utc_iso_string(datetime.datetime(2023, 1, 6, 17, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 1, 6, 17, 0, 0, tzinfo=NY_TZ))
     )
 
     # crypto
