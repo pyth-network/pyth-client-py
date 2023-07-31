@@ -1,3 +1,5 @@
+# Classes and functions here are referenced from pyth-crosschain repo
+
 import json
 import logging
 from struct import unpack
@@ -165,6 +167,7 @@ def encode_vaa_for_chain(vaa, target_chain):
         return vaa_buffer.decode(encoding)
 
 
+# Referenced from https://github.com/wormhole-foundation/wormhole/blob/main/sdk/js/src/vaa/wormhole.ts#L26-L56
 def parse_vaa(vaa):
     if isinstance(vaa, str):
         vaa = bytes.fromhex(vaa)
