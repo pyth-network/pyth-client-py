@@ -1,8 +1,6 @@
-# Classes and functions here are referenced from pyth-crosschain repo
-
-import json
 import logging
 from struct import unpack
+from typing import List
 
 from Crypto.Hash import keccak
 
@@ -12,12 +10,6 @@ P2W_FORMAT_VER_MINOR = 0
 P2W_FORMAT_PAYLOAD_ID = 2
 
 DEFAULT_VAA_ENCODING = "base64"
-CHAIN_TO_ENCODING = {
-    "evm": "0x",
-    "cosmos": "base64",
-    "aptos": "base64",
-    "default": "base64",
-}
 
 
 class Price:
@@ -38,18 +30,8 @@ class Price:
             "publish_time": self.publish_time,
         }
 
-    def to_json(self):
-        return json.dumps(
-            {
-                "conf": self.conf,
-                "expo": self.expo,
-                "price": self.price,
-                "publish_time": self.publish_time,
-            }
-        )
 
-
-class PriceFeed:
+class PriceUpdate:
     def __init__(self, ema_price, price_id, price):
         self.ema_price = ema_price
         self.id = price_id
@@ -57,7 +39,7 @@ class PriceFeed:
 
     def __str__(self):
         return (
-            f"PriceFeed(ema_price={self.ema_price}, id={self.id}, price={self.price})"
+            f"PriceUpdate(ema_price={self.ema_price}, id={self.id}, price={self.price})"
         )
 
     def to_dict(self):
@@ -66,15 +48,6 @@ class PriceFeed:
             "id": self.id,
             "price": self.price.to_dict(),
         }
-
-    def to_json(self):
-        return json.dumps(
-            {
-                "ema_price": self.ema_price.to_dict(),
-                "id": self.id,
-                "price": self.price.to_dict(),
-            }
-        )
 
 
 class PriceInfo:
@@ -107,18 +80,7 @@ class PriceInfo:
             f"Emitter Chain ID: {self.emitter_chain_id}\n"
         )
 
-    def to_dict(self):
-        return {
-            "seq_num": self.seq_num,
-            "vaa": self.vaa,
-            "publish_time": self.publish_time,
-            "attestation_time": self.attestation_time,
-            "last_attested_publish_time": self.last_attested_publish_time,
-            "price_feed": self.price_feed.to_dict(),
-            "emitter_chain_id": self.emitter_chain_id,
-        }
-
-    def to_json(self, verbose=False, target_chain=None):
+    def to_dict(self, verbose=False, vaa_format=None):
         metadata = (
             {
                 "emitter_chain": self.emitter_chain_id,
@@ -131,9 +93,9 @@ class PriceInfo:
 
         vaa_data = (
             {
-                "vaa": encode_vaa_for_chain(self.vaa, target_chain),
+                "vaa": encode_vaa_for_chain(self.vaa, vaa_format),
             }
-            if target_chain
+            if vaa_format
             else {}
         )
 
@@ -143,14 +105,13 @@ class PriceInfo:
             **vaa_data,
         }
 
-        return json.dumps(result)
+        return result
 
 
-def encode_vaa_for_chain(vaa, target_chain):
-    encoding = CHAIN_TO_ENCODING[target_chain]
-
+# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/price_service/server/src/encoding.ts#L24
+def encode_vaa_for_chain(vaa, vaa_format):
     if isinstance(vaa, str):
-        if encoding == DEFAULT_VAA_ENCODING:
+        if vaa_format == DEFAULT_VAA_ENCODING:
             return vaa
         else:
             vaa_buffer = (
@@ -161,10 +122,10 @@ def encode_vaa_for_chain(vaa, target_chain):
     else:
         vaa_buffer = bytes(vaa)
 
-    if encoding == "0x":
+    if vaa_format == "0x":
         return "0x" + vaa_buffer.hex()
     else:
-        return vaa_buffer.decode(encoding)
+        return vaa_buffer.decode(vaa_format)
 
 
 # Referenced from https://github.com/wormhole-foundation/wormhole/blob/main/sdk/js/src/vaa/wormhole.ts#L26-L56
@@ -214,6 +175,7 @@ def parse_vaa(vaa):
     }
 
 
+# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/wormhole_attester/sdk/js/src/index.ts#L122
 def parse_batch_price_attestation(bytes_):
     offset = 0
 
@@ -270,6 +232,7 @@ def parse_batch_price_attestation(bytes_):
     }
 
 
+# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/wormhole_attester/sdk/js/src/index.ts#L50
 def parse_price_attestation(bytes_):
     offset = 0
 
@@ -361,8 +324,11 @@ def parse_price_attestation(bytes_):
     }
 
 
-def vaa_to_price_info(price_feed_id, vaa) -> PriceInfo:
+# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/price_service/server/src/rest.ts#L139
+def vaa_to_price_infos(vaa) -> List[PriceInfo]:
     parsed_vaa = parse_vaa(vaa)
+
+    # TODO: support accumulators
 
     try:
         batch_attestation = parse_batch_price_attestation(parsed_vaa["payload"])
@@ -371,18 +337,30 @@ def vaa_to_price_info(price_feed_id, vaa) -> PriceInfo:
         logging.error(f"Parsing historical VAA failed: {parsed_vaa}")
         return None
 
+    price_infos = []
     for price_attestation in batch_attestation["price_attestations"]:
-        if price_attestation["price_id"] == price_feed_id:
-            return create_price_info(
+        price_infos.append(
+            create_price_info(
                 price_attestation,
                 vaa,
                 parsed_vaa["sequence"],
                 parsed_vaa["emitter_chain"],
             )
+        )
+
+    return price_infos
+
+
+def vaa_to_price_info(price_feed_id, vaa) -> PriceInfo:
+    price_infos = vaa_to_price_infos(vaa)
+    for price_info in price_infos:
+        if price_info.price_feed.id == price_feed_id:
+            return price_info
 
     return None
 
 
+# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/price_service/server/src/listen.ts#L37
 def create_price_info(price_attestation, vaa, sequence, emitter_chain):
     price_feed = price_attestation_to_price_feed(price_attestation)
     return PriceInfo(
@@ -396,6 +374,7 @@ def create_price_info(price_attestation, vaa, sequence, emitter_chain):
     )
 
 
+# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/wormhole_attester/sdk/js/src/index.ts#L218
 def price_attestation_to_price_feed(price_attestation):
     ema_price = Price(
         price_attestation["ema_conf"],
@@ -420,11 +399,4 @@ def price_attestation_to_price_feed(price_attestation):
         )
         ema_price.publish_time = price_attestation["prev_publish_time"]
 
-    return PriceFeed(ema_price, price_attestation["price_id"], price)
-
-
-id = "e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43"
-vaa = "01000000030d00ca037dde1419ea373de7474bff80268e41f55e84dd8e4fa5e5167808111e63e4064efcfd93075d9d162090bc478a017603ef56c4d26e0c46e0af6128c08984470002e9abd7c4e62bbc6b453c5ca014b7313bbadb17d6443190d6679b7c0ccb03bae619d21dcb5d6d5a484f9e4fd5586dca7c20403dc80d61dbe682a436b4d15d10bc0003a5e748513b75e34d9db61c6fd0fa55533e8424d88fbe6cda8e7cf61d50cb9467192a5cbd47b14b205b38123ad4b7c39d6ce7d6bf02c4a1452d135dc29fc83ef600049e4cd56e3c2e0cfc4cc831bc4ec54410590c15b4b20b63cc91be3436a4d09c0c22be4ab96962ad6e94d83e14c770e122aebae6fdbdea97f98cec7da5d30ed2a40106a7565c6387a700e02ee09652b40bdeef044441ca1e3b3c9376d4a129d22ca861501c3f5c0e8469c9a0e5d1b09d9f84c6517c0a2b400c0b47552006fff1dad3a5000a4db87004c483f899b5fd766c14334dfb5ca2fa5698964cf9644669b325bd3485207cbc4180a360023d1412da68bb11a0a82fee70a6bf03dda30b7aae53e0e465010ba3a6e45c9d8ef1d1041fdc7a926a9f41075531d45824144bbc720d111ee7270a77dd6dd65558b30d0f03692e075bd7d96cdfb24f5a68fecc22e441ded230c9cc010c09380e394e2b30fd036f13152b115dab7a206270d52255dfbbf0505c67bf510e70d0a6075f9bae19235eaf8a0893a4af9ed0df1b8cd67e1fe7b2ec61178d3ca4010dc491600d07d10a6468fb5955d94bc114efab46104e2ae530931231fea52cf7e32964a1c8bfe0ee38aaa8abfe8edcb7c079b6dd97b2c317c9d71cb5973bb53c72010f787e3c59ac484fdca7d5e41b29cebee08cb1789d61a0f29ccd0353118fd667ab1473a626eb6c237cff70ffb1eb2a556862197b08f183d5852168f5ce0f92632b0110f7ee4abdedc936ebebe86b3493292a9fa6625ab910b4a1340b46478a819508d1261f3d559d5cc95dead635c215b80b1cb2df348639d1ca572d3d14f07dc38908011103e3cdc9936ffbb7c0af5d77a4c092c5c42de161c9254919d19af718defd71a757fcbb1e3772e72c3a8c8291ab36f628a060030abf8ffb43923bb1a05cf9605d0112ddea2ce8ec77b9e222db5f1a95861c3da2ed3f54f7e937008bcc14b2458b98990eeb5910c7e9b2a27ff47a9568d0a3fedc12f357323905cbc8a1be6acbc5986b0064c37bca00000000001af8cd23c2ab91237730770bbea08d61005cdda0984348f3f6eecb559638c0bba0000000002144b1420150325748000300010001020005009d2efa1235ab86c0935cb424b102be4f217e74d1109df9e75dfa8338fc0f0908782f95862b045670cd22bee3114c39763a4a08beeb663b145d283c31d7d1101c4f000000059cc51c400000000000e4e1bffffffff8000000059b3f3c700000000000eae895010000001a0000001e0000000064c37bca0000000064c37bca0000000064c37bc9000000059cc51c400000000000e4e1bf0000000064c37bc948d6033d733e27950c2e0351e2505491cd9154824f716d9513514c74b9f98f583dd2b63686a450ec7290df3a1e0b583c0481f651351edfa7636f39aed55cf8a300000005a7462c060000000000d206a2fffffff800000005a5c499380000000000f44b7d010000001c000000200000000064c37bca0000000064c37bca0000000064c37bc900000005a74653cc0000000000d1dedc0000000064c37bc83515b3861e8fe93e5f540ba4077c216404782b86d5e78077b3cbfd27313ab3bce62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43000002a724c9d1000000000032396fc5fffffff8000002a6e3e0fec0000000002ee4815c010000001b000000200000000064c37bca0000000064c37bca0000000064c37bc9000002a724c9d1000000000032396fc50000000064c37bc99b5f73e0075e7d70376012180ddba94272f68d85eae4104e335561c982253d41a19d04ac696c7a6616d291c7e5d1377cc8be437c327b75adb5dc1bad745fcae800000000045152eb000000000001bb63fffffff800000000044de0b500000000000185df0100000015000000160000000064c37bca0000000064c37bca0000000064c37bc900000000045152eb000000000001bb630000000064c37bc8e876fcd130add8984a33aab52af36bc1b9f822c9ebe376f3aa72d630974e15f0dcef50dd0a4cd2dcc17e45df1676dcb336a11a61c69df7a0299b0150c672d25c000000000074990500000000000011d9fffffff80000000000748c2f000000000000116f010000001b000000200000000064c37bca0000000064c37bca0000000064c37bc900000000007498d400000000000011a80000000064c37bc9"
-price_info = vaa_to_price_info(id, vaa)
-
-print(price_info.to_json())
+    return PriceUpdate(ema_price, price_attestation["price_id"], price)
