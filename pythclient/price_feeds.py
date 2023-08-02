@@ -1,3 +1,4 @@
+import base64
 import logging
 from struct import unpack
 from typing import List
@@ -129,9 +130,12 @@ def encode_vaa_for_chain(vaa, vaa_format):
 
 
 # Referenced from https://github.com/wormhole-foundation/wormhole/blob/main/sdk/js/src/vaa/wormhole.ts#L26-L56
-def parse_vaa(vaa):
+def parse_vaa(vaa, encoding):
     if isinstance(vaa, str):
-        vaa = bytes.fromhex(vaa)
+        if encoding == "base64":
+            vaa = base64.b64decode(vaa)
+        else:
+            vaa = bytes.fromhex(vaa)
 
     num_signers = vaa[5]
     sig_length = 66
@@ -325,8 +329,8 @@ def parse_price_attestation(bytes_):
 
 
 # Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/price_service/server/src/rest.ts#L139
-def vaa_to_price_infos(vaa) -> List[PriceInfo]:
-    parsed_vaa = parse_vaa(vaa)
+def vaa_to_price_infos(vaa, encoding="hex") -> List[PriceInfo]:
+    parsed_vaa = parse_vaa(vaa, encoding)
 
     # TODO: support accumulators
 
@@ -351,8 +355,8 @@ def vaa_to_price_infos(vaa) -> List[PriceInfo]:
     return price_infos
 
 
-def vaa_to_price_info(price_feed_id, vaa) -> PriceInfo:
-    price_infos = vaa_to_price_infos(vaa)
+def vaa_to_price_info(price_feed_id, vaa, encoding="hex") -> PriceInfo:
+    price_infos = vaa_to_price_infos(vaa, encoding)
     for price_info in price_infos:
         if price_info.price_feed.id == price_feed_id:
             return price_info
