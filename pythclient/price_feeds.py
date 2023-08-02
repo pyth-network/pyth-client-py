@@ -1,4 +1,5 @@
 import base64
+import binascii
 import logging
 from struct import unpack
 from typing import List
@@ -10,7 +11,7 @@ P2W_FORMAT_VER_MAJOR = 3
 P2W_FORMAT_VER_MINOR = 0
 P2W_FORMAT_PAYLOAD_ID = 2
 
-DEFAULT_VAA_ENCODING = "base64"
+DEFAULT_VAA_ENCODING = "hex"
 
 
 class Price:
@@ -81,7 +82,7 @@ class PriceInfo:
             f"Emitter Chain ID: {self.emitter_chain_id}\n"
         )
 
-    def to_dict(self, verbose=False, vaa_format=None):
+    def to_dict(self, verbose=False, vaa_format=DEFAULT_VAA_ENCODING):
         metadata = (
             {
                 "emitter_chain": self.emitter_chain_id,
@@ -110,32 +111,40 @@ class PriceInfo:
 
 
 # Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/price_service/server/src/encoding.ts#L24
-def encode_vaa_for_chain(vaa, vaa_format):
+def encode_vaa_for_chain(vaa, vaa_format, buffer=False):
+    # check if vaa is already in vaa_format
     if isinstance(vaa, str):
         if vaa_format == DEFAULT_VAA_ENCODING:
-            return vaa
+            try:
+                vaa_buffer = bytes.fromhex(vaa)
+            except ValueError:
+                pass  # VAA is not in hex format
+            else:
+                # VAA is in hex format, return it as it is
+                return vaa_buffer if buffer else vaa
         else:
-            vaa_buffer = (
-                bytes.fromhex(vaa)
-                if vaa.startswith("0x")
-                else bytes(vaa, encoding=DEFAULT_VAA_ENCODING)
-            )
-    else:
-        vaa_buffer = bytes(vaa)
+            try:
+                vaa_buffer = base64.b64decode(vaa)
+            except binascii.Error:
+                pass  # VAA is not in base64 format
+            else:
+                # VAA is in base64 format, return it as it is
+                return vaa_buffer if buffer else vaa
 
-    if vaa_format == "0x":
-        return "0x" + vaa_buffer.hex()
+    # Convert VAA to the specified format
+    if vaa_format == DEFAULT_VAA_ENCODING:
+        vaa_buffer = base64.b64decode(vaa)
+        vaa_str = vaa_buffer.hex()
     else:
-        return vaa_buffer.decode(vaa_format)
+        vaa_buffer = bytes.fromhex(vaa)
+        vaa_str = base64.b64encode(vaa_buffer).decode("ascii")
+
+    return vaa_buffer if buffer else vaa_str
 
 
 # Referenced from https://github.com/wormhole-foundation/wormhole/blob/main/sdk/js/src/vaa/wormhole.ts#L26-L56
 def parse_vaa(vaa, encoding):
-    if isinstance(vaa, str):
-        if encoding == "base64":
-            vaa = base64.b64decode(vaa)
-        else:
-            vaa = bytes.fromhex(vaa)
+    vaa = encode_vaa_for_chain(vaa, encoding, buffer=True)
 
     num_signers = vaa[5]
     sig_length = 66
@@ -329,18 +338,12 @@ def parse_price_attestation(bytes_):
 
 
 # Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/price_service/server/src/rest.ts#L139
-def vaa_to_price_infos(vaa, encoding="hex") -> List[PriceInfo]:
+def vaa_to_price_infos(vaa, encoding=DEFAULT_VAA_ENCODING) -> List[PriceInfo]:
     parsed_vaa = parse_vaa(vaa, encoding)
 
     # TODO: support accumulators
 
-    try:
-        batch_attestation = parse_batch_price_attestation(parsed_vaa["payload"])
-    except Exception as e:
-        logging.error(e)
-        logging.error(f"Parsing historical VAA failed: {parsed_vaa}")
-        return None
-
+    batch_attestation = parse_batch_price_attestation(parsed_vaa["payload"])
     price_infos = []
     for price_attestation in batch_attestation["price_attestations"]:
         price_infos.append(
@@ -355,7 +358,7 @@ def vaa_to_price_infos(vaa, encoding="hex") -> List[PriceInfo]:
     return price_infos
 
 
-def vaa_to_price_info(price_feed_id, vaa, encoding="hex") -> PriceInfo:
+def vaa_to_price_info(price_feed_id, vaa, encoding=DEFAULT_VAA_ENCODING) -> PriceInfo:
     price_infos = vaa_to_price_infos(vaa, encoding)
     for price_info in price_infos:
         if price_info.price_feed.id == price_feed_id:

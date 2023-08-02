@@ -45,9 +45,6 @@ def test_valid_base64_vaa_to_price_info():
 
 def test_invalid_vaa_to_price_info():
     try:
-        vaa_to_price_info(ID, HEX_VAA + "1")
+        vaa_to_price_info(ID, HEX_VAA + "10")
     except ValueError as ve:
-        assert (
-            ve.args[0]
-            == "non-hexadecimal number found in fromhex() arg at position 3431"
-        )
+        assert ve.args[0] == "Invalid length: 801, expected: 800"
