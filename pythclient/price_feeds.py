@@ -4,6 +4,7 @@ from struct import unpack
 from typing import Any, Dict, List, Optional
 
 from Crypto.Hash import keccak
+from loguru import logger
 
 P2W_FORMAT_MAGIC = "P2WH"
 P2W_FORMAT_VER_MAJOR = 3
@@ -357,11 +358,8 @@ def vaa_to_price_infos(vaa, encoding=DEFAULT_VAA_ENCODING) -> List[PriceInfo]:
 
 
 def vaa_to_price_info(price_feed_id, vaa, encoding=DEFAULT_VAA_ENCODING) -> PriceInfo:
-    encoded_vaa = encode_vaa_for_chain(vaa, encoding, buffer=True)
-    if encoded_vaa[:4].hex() == ACCUMULATOR_MAGIC:
-        return extract_price_info_from_accumulator_update(
-            price_feed_id, encoded_vaa, encoding
-        )
+    if encode_vaa_for_chain(vaa, encoding, buffer=True)[:4].hex() == ACCUMULATOR_MAGIC:
+        return extract_price_info_from_accumulator_update(price_feed_id, vaa, encoding)
     price_infos = vaa_to_price_infos(vaa, encoding)
     for price_info in price_infos:
         if price_info.price_feed.id == price_feed_id:
@@ -416,25 +414,28 @@ def price_attestation_to_price_feed(price_attestation):
 def extract_price_info_from_accumulator_update(
     price_feed_id, update_data, encoding
 ) -> Optional[Dict[str, Any]]:
+    encoded_update_data = encode_vaa_for_chain(update_data, encoding, buffer=True)
     offset = 0
     offset += 4  # magic
     offset += 1  # major version
     offset += 1  # minor version
 
-    trailing_header_size = update_data[offset]
+    trailing_header_size = encoded_update_data[offset]
     offset += 1 + trailing_header_size
 
-    update_type = update_data[offset]
+    update_type = encoded_update_data[offset]
     offset += 1
 
     if update_type != 0:
-        print(f"Invalid accumulator update type: {update_type}")
+        logger.info(f"Invalid accumulator update type: {update_type}")
         return None
 
-    vaa_length = int.from_bytes(update_data[offset : offset + 2], byteorder="big")
+    vaa_length = int.from_bytes(
+        encoded_update_data[offset : offset + 2], byteorder="big"
+    )
     offset += 2
 
-    vaa_buffer = update_data[offset : offset + vaa_length]
+    vaa_buffer = encoded_update_data[offset : offset + vaa_length]
     # convert vaa_buffer to string based on encoding
     if encoding == "hex":
         vaa_str = vaa_buffer.hex()
@@ -443,19 +444,19 @@ def extract_price_info_from_accumulator_update(
     parsed_vaa = parse_vaa(vaa_str, encoding)
     offset += vaa_length
 
-    num_updates = update_data[offset]
+    num_updates = encoded_update_data[offset]
     offset += 1
 
     for _ in range(num_updates):
         message_length = int.from_bytes(
-            update_data[offset : offset + 2], byteorder="big"
+            encoded_update_data[offset : offset + 2], byteorder="big"
         )
         offset += 2
 
-        message = update_data[offset : offset + message_length]
+        message = encoded_update_data[offset : offset + message_length]
         offset += message_length
 
-        proof_length = update_data[offset]
+        proof_length = encoded_update_data[offset]
         offset += 1
         offset += proof_length  # ignore proofs
 
@@ -463,6 +464,7 @@ def extract_price_info_from_accumulator_update(
         message_type = message[message_offset]
         message_offset += 1
 
+        # Message Type 0 is a price update and we ignore the rest
         if message_type != 0:
             continue
 
@@ -502,7 +504,7 @@ def extract_price_info_from_accumulator_update(
 
         return PriceInfo(
             seq_num=parsed_vaa["sequence"],
-            vaa=vaa_str,
+            vaa=update_data,
             publish_time=publish_time,
             attestation_time=publish_time,
             last_attested_publish_time=prev_publish_time,
