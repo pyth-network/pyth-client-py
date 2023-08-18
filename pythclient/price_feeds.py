@@ -1,8 +1,7 @@
 import base64
 import binascii
-import logging
 from struct import unpack
-from typing import List
+from typing import Any, Dict, List, Optional
 
 from Crypto.Hash import keccak
 
@@ -12,6 +11,8 @@ P2W_FORMAT_VER_MINOR = 0
 P2W_FORMAT_PAYLOAD_ID = 2
 
 DEFAULT_VAA_ENCODING = "hex"
+
+ACCUMULATOR_MAGIC = "504e4155"
 
 
 class Price:
@@ -110,7 +111,7 @@ class PriceInfo:
         return result
 
 
-# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/price_service/server/src/encoding.ts#L24
+# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/110caed6be3be7885773d2f6070b143cc13fb0ee/price_service/server/src/encoding.ts#L24
 def encode_vaa_for_chain(vaa, vaa_format, buffer=False):
     # check if vaa is already in vaa_format
     if isinstance(vaa, str):
@@ -337,12 +338,9 @@ def parse_price_attestation(bytes_):
     }
 
 
-# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/price_service/server/src/rest.ts#L139
+# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/110caed6be3be7885773d2f6070b143cc13fb0ee/price_service/server/src/rest.ts#L139
 def vaa_to_price_infos(vaa, encoding=DEFAULT_VAA_ENCODING) -> List[PriceInfo]:
     parsed_vaa = parse_vaa(vaa, encoding)
-
-    # TODO: support accumulators
-
     batch_attestation = parse_batch_price_attestation(parsed_vaa["payload"])
     price_infos = []
     for price_attestation in batch_attestation["price_attestations"]:
@@ -359,6 +357,11 @@ def vaa_to_price_infos(vaa, encoding=DEFAULT_VAA_ENCODING) -> List[PriceInfo]:
 
 
 def vaa_to_price_info(price_feed_id, vaa, encoding=DEFAULT_VAA_ENCODING) -> PriceInfo:
+    encoded_vaa = encode_vaa_for_chain(vaa, encoding, buffer=True)
+    if encoded_vaa[:4].hex() == ACCUMULATOR_MAGIC:
+        return extract_price_info_from_accumulator_update(
+            price_feed_id, encoded_vaa, encoding
+        )
     price_infos = vaa_to_price_infos(vaa, encoding)
     for price_info in price_infos:
         if price_info.price_feed.id == price_feed_id:
@@ -367,7 +370,7 @@ def vaa_to_price_info(price_feed_id, vaa, encoding=DEFAULT_VAA_ENCODING) -> Pric
     return None
 
 
-# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/price_service/server/src/listen.ts#L37
+# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/110caed6be3be7885773d2f6070b143cc13fb0ee/price_service/server/src/listen.ts#L37
 def create_price_info(price_attestation, vaa, sequence, emitter_chain):
     price_feed = price_attestation_to_price_feed(price_attestation)
     return PriceInfo(
@@ -407,3 +410,118 @@ def price_attestation_to_price_feed(price_attestation):
         ema_price.publish_time = price_attestation["prev_publish_time"]
 
     return PriceUpdate(ema_price, price_attestation["price_id"], price)
+
+
+# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/price_service/server/src/rest.ts#L137
+def extract_price_info_from_accumulator_update(
+    price_feed_id, update_data, encoding
+) -> Optional[Dict[str, Any]]:
+    offset = 0
+    offset += 4  # magic
+    offset += 1  # major version
+    offset += 1  # minor version
+
+    trailing_header_size = update_data[offset]
+    offset += 1 + trailing_header_size
+
+    update_type = update_data[offset]
+    offset += 1
+
+    if update_type != 0:
+        print(f"Invalid accumulator update type: {update_type}")
+        return None
+
+    vaa_length = int.from_bytes(update_data[offset : offset + 2], byteorder="big")
+    offset += 2
+
+    vaa_buffer = update_data[offset : offset + vaa_length]
+    # convert vaa_buffer to string based on encoding
+    if encoding == "hex":
+        vaa_str = vaa_buffer.hex()
+    elif encoding == "base64":
+        vaa_str = base64.b64encode(vaa_buffer).decode("ascii")
+    parsed_vaa = parse_vaa(vaa_str, encoding)
+    offset += vaa_length
+
+    num_updates = update_data[offset]
+    offset += 1
+
+    for _ in range(num_updates):
+        message_length = int.from_bytes(
+            update_data[offset : offset + 2], byteorder="big"
+        )
+        offset += 2
+
+        message = update_data[offset : offset + message_length]
+        offset += message_length
+
+        proof_length = update_data[offset]
+        offset += 1
+        offset += proof_length  # ignore proofs
+
+        message_offset = 0
+        message_type = message[message_offset]
+        message_offset += 1
+
+        if message_type != 0:
+            continue
+
+        price_id = message[message_offset : message_offset + 32].hex()
+        message_offset += 32
+
+        if price_id != price_feed_id:
+            continue
+
+        price = int.from_bytes(
+            message[message_offset : message_offset + 8], byteorder="big", signed=True
+        )
+        message_offset += 8
+        conf = int.from_bytes(
+            message[message_offset : message_offset + 8], byteorder="big", signed=False
+        )
+        message_offset += 8
+        expo = int.from_bytes(
+            message[message_offset : message_offset + 4], byteorder="big", signed=True
+        )
+        message_offset += 4
+        publish_time = int.from_bytes(
+            message[message_offset : message_offset + 8], byteorder="big", signed=True
+        )
+        message_offset += 8
+        prev_publish_time = int.from_bytes(
+            message[message_offset : message_offset + 8], byteorder="big", signed=True
+        )
+        message_offset += 8
+        ema_price = int.from_bytes(
+            message[message_offset : message_offset + 8], byteorder="big", signed=True
+        )
+        message_offset += 8
+        ema_conf = int.from_bytes(
+            message[message_offset : message_offset + 8], byteorder="big", signed=False
+        )
+
+        return PriceInfo(
+            seq_num=parsed_vaa["sequence"],
+            vaa=vaa_str,
+            publish_time=publish_time,
+            attestation_time=publish_time,
+            last_attested_publish_time=prev_publish_time,
+            price_feed=PriceUpdate(
+                ema_price=Price(
+                    price=str(ema_price),
+                    conf=str(ema_conf),
+                    expo=expo,
+                    publish_time=publish_time,
+                ),
+                price_id=price_id,
+                price=Price(
+                    price=str(price),
+                    conf=str(conf),
+                    expo=expo,
+                    publish_time=publish_time,
+                ),
+            ),
+            emitter_chain_id=parsed_vaa["emitter_chain"],
+        )
+
+    return None
