@@ -410,7 +410,7 @@ def price_attestation_to_price_feed(price_attestation):
     return PriceUpdate(ema_price, price_attestation["price_id"], price)
 
 
-# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/main/price_service/server/src/rest.ts#L137
+# Referenced from https://github.com/pyth-network/pyth-crosschain/blob/1a00598334e52fc5faf967eb1170d7fc23ad828b/price_service/server/src/rest.ts#L137
 def extract_price_info_from_accumulator_update(
     price_feed_id, update_data, encoding
 ) -> Optional[Dict[str, Any]]:
