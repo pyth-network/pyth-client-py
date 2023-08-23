@@ -16,7 +16,8 @@ EQUITY_EARLY_CLOSE_OPEN_FRI_2023_11_24_14 = datetime.datetime(2023, 11, 24, 11, 
 EQUITY_EARLY_CLOSE_CLOSE_FRI_2023_11_24_14 = datetime.datetime(2023, 11, 24, 14, 0, 0, tzinfo=NY_TZ)
 
 # Define constants for fx & metal market
-FX_METAL_OPEN_WED_2023_6_21_22 = datetime.datetime(2023, 6, 21, 22, 0, 0, tzinfo=NY_TZ)
+FX_METAL_OPEN_WED_2023_6_21_21 = datetime.datetime(2023, 6, 21, 21, 0, 0, tzinfo=NY_TZ)
+FX_METAL_OPEN_WED_2023_6_21_23 = datetime.datetime(2023, 6, 21, 23, 0, 0, tzinfo=NY_TZ)
 FX_METAL_CLOSE_SUN_2023_6_18_16 = datetime.datetime(2023, 6, 18, 16, 0, 0, tzinfo=NY_TZ)
 FX_METAL_HOLIDAY_SUN_2023_1_1 = datetime.datetime(2023, 1, 1, tzinfo=NY_TZ)
 
@@ -51,8 +52,8 @@ def test_is_market_open():
 
     # fx & metal
     # weekday, within fx & metal market hours
-    assert is_market_open("fx", FX_METAL_OPEN_WED_2023_6_21_22) == True
-    assert is_market_open("metal", FX_METAL_OPEN_WED_2023_6_21_22) == True
+    assert is_market_open("fx", FX_METAL_OPEN_WED_2023_6_21_21) == True
+    assert is_market_open("metal", FX_METAL_OPEN_WED_2023_6_21_21) == True
 
     # weekday, out of fx & metal market hours
     assert is_market_open("fx", FX_METAL_CLOSE_SUN_2023_6_18_16) == False
@@ -102,13 +103,22 @@ def test_get_next_market_open():
         == format_datetime_to_unix_timestamp(datetime.datetime(2023, 11, 27, 9, 30, 0, tzinfo=NY_TZ))
     )
 
-    # fx & metal within market hours
+    # fx & metal within market hours (before 10pm UTC)
     assert (
-        get_next_market_open("fx", FX_METAL_OPEN_WED_2023_6_21_22)
+        get_next_market_open("fx", FX_METAL_OPEN_WED_2023_6_21_21)
         == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 25, 17, 0, 0, tzinfo=NY_TZ))
     )
     assert (
-        get_next_market_open("metal", FX_METAL_OPEN_WED_2023_6_21_22)
+        get_next_market_open("metal", FX_METAL_OPEN_WED_2023_6_21_21)
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 25, 17, 0, 0, tzinfo=NY_TZ))
+    )
+    # fx & metal within market hours (after 10pm UTC)
+    assert (
+        get_next_market_open("fx", FX_METAL_OPEN_WED_2023_6_21_23)
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 25, 17, 0, 0, tzinfo=NY_TZ))
+    )
+    assert (
+        get_next_market_open("metal", FX_METAL_OPEN_WED_2023_6_21_23)
         == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 25, 17, 0, 0, tzinfo=NY_TZ))
     )
 
@@ -172,13 +182,23 @@ def test_get_next_market_close():
         == format_datetime_to_unix_timestamp(datetime.datetime(2023, 11, 27, 16, 0, 0, tzinfo=NY_TZ))
     )
 
-    # fx & metal within market hours
+    # fx & metal within market hours (before 10pm UTC)
     assert (
-        get_next_market_close("fx", FX_METAL_OPEN_WED_2023_6_21_22)
+        get_next_market_close("fx", FX_METAL_OPEN_WED_2023_6_21_21)
         == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 23, 17, 0, 0, tzinfo=NY_TZ))
     )
     assert (
-        get_next_market_close("metal", FX_METAL_OPEN_WED_2023_6_21_22)
+        get_next_market_close("metal", FX_METAL_OPEN_WED_2023_6_21_21)
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 23, 17, 0, 0, tzinfo=NY_TZ))
+    )
+
+    # fx & metal within market hours (after 10pm UTC)
+    assert (
+        get_next_market_close("fx", FX_METAL_OPEN_WED_2023_6_21_23)
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 23, 17, 0, 0, tzinfo=NY_TZ))
+    )
+    assert (
+        get_next_market_close("metal", FX_METAL_OPEN_WED_2023_6_21_23)
         == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 23, 17, 0, 0, tzinfo=NY_TZ))
     )
 
