@@ -96,7 +96,7 @@ def get_next_market_open(asset_type: str, dt: datetime.datetime) -> int:
             )
             next_market_open += datetime.timedelta(days=1)
     elif asset_type in ["fx", "metal"]:
-        if time < FX_METAL_OPEN_CLOSE_TIME:
+        if dt.weekday() == 6 and time < FX_METAL_OPEN_CLOSE_TIME:
             next_market_open = dt.replace(
                 hour=FX_METAL_OPEN_CLOSE_TIME.hour,
                 minute=FX_METAL_OPEN_CLOSE_TIME.minute,
@@ -112,7 +112,6 @@ def get_next_market_open(asset_type: str, dt: datetime.datetime) -> int:
             )
             while is_market_open(asset_type, next_market_open):
                 next_market_open += datetime.timedelta(days=1)
-
     else:
         return None
 
@@ -148,12 +147,16 @@ def get_next_market_close(asset_type: str, dt: datetime.datetime) -> int:
             next_market_open = get_next_market_open(
                 asset_type, dt + datetime.timedelta(days=1)
             )
-            next_market_close = datetime.datetime.fromtimestamp(next_market_open).astimezone(NY_TZ).replace(
+            next_market_close = (
+                datetime.datetime.fromtimestamp(next_market_open)
+                .astimezone(NY_TZ)
+                .replace(
                     hour=EQUITY_CLOSE.hour,
                     minute=EQUITY_CLOSE.minute,
                     second=0,
                     microsecond=0,
                 )
+            )
         else:
             next_market_close = dt.replace(
                 hour=EQUITY_CLOSE.hour,
