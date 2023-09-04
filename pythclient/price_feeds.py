@@ -675,7 +675,7 @@ def compress_accumulator_update(update_data_list, encoding) -> List[str]:
 
 def serialize_accumulator_update(data, encoding):
     """
-    This function serializes an accumulator update data into a hexadecimal string.
+    This function serializes an accumulator update data into a string.
 
     Parameters:
     data (dict): The accumulator update data to serialize. The dictionary should include the following keys:
@@ -692,9 +692,10 @@ def serialize_accumulator_update(data, encoding):
             - "message": The message itself.
             - "proof_size": The size of the proof in the update.
             - "proof": The proof itself.
+    encoding (str): The encoding of the serialized data. Can be either "hex" or "base64".
 
     Returns:
-    str: The serialized accumulator update data as a hexadecimal string.
+    str: The serialized accumulator update data as a string. If the encoding is "hex", the function returns a hexadecimal string. If the encoding is "base64", the function returns a base64 string.
     """
     serialized_data = bytearray()
     serialized_data.extend(data["magic"])
