@@ -488,60 +488,16 @@ def price_attestation_to_price_feed(price_attestation):
 def extract_price_info_from_accumulator_update(
     update_data, encoding
 ) -> Optional[Dict[str, Any]]:
-    encoded_update_data = encode_vaa_for_chain(update_data, encoding, buffer=True)
-    offset = 0
-    offset += 4  # magic
-    offset += 1  # major version
-    offset += 1  # minor version
-
-    trailing_header_size = encoded_update_data[offset]
-    offset += 1 + trailing_header_size
-
-    update_type = encoded_update_data[offset]
-    offset += 1
-
-    if update_type != 0:
-        logger.info(f"Invalid accumulator update type: {update_type}")
-        return None
-
-    vaa_length = int.from_bytes(
-        encoded_update_data[offset : offset + 2], byteorder="big"
-    )
-    offset += 2
-
-    vaa_buffer = encoded_update_data[offset : offset + vaa_length]
-    # convert vaa_buffer to string based on encoding
+    parsed_update_data = parse_accumulator_update(update_data, encoding)
+    vaa_buffer = parsed_update_data.vaa
     if encoding == "hex":
         vaa_str = vaa_buffer.hex()
     elif encoding == "base64":
         vaa_str = base64.b64encode(vaa_buffer).decode("ascii")
     parsed_vaa = parse_vaa(vaa_str, encoding)
-    offset += vaa_length
-
-    num_updates = encoded_update_data[offset]
-    offset += 1
-
     price_infos = []
-    for _ in range(num_updates):
-        message_length = int.from_bytes(
-            encoded_update_data[offset : offset + 2], byteorder="big"
-        )  # message_size: u16
-        offset += 2
-
-        message = encoded_update_data[
-            offset : offset + message_length
-        ]  # message: [u8; message_size]
-        offset += message_length
-
-        proof_length = encoded_update_data[offset]  # proof_size: u8
-        offset += 1
-
-        proof = []
-        for _ in range(proof_length):
-            hash = encoded_update_data[offset : offset + 20]
-            proof.append(hash)
-            offset += 20
-
+    for update in parsed_update_data.updates:
+        message = update.message
         message_offset = 0
         message_type = message[message_offset]
         message_offset += 1
