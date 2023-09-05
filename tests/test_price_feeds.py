@@ -1,6 +1,7 @@
 import base64
 
 from pythclient.price_feeds import (
+    ACCUMULATOR_MAGIC,
     AccumulatorUpdate,
     MerkleUpdate,
     compress_accumulator_update,
@@ -123,7 +124,7 @@ def test_parse_accumulator_update():
     parsed_update_data = parse_accumulator_update(
         ACCUMULATOR_UPDATE_DATA_BTC_SAME_VAA, "base64"
     )
-    assert parsed_update_data.magic == b"PNAU"
+    assert parsed_update_data.magic == bytes.fromhex(ACCUMULATOR_MAGIC)
     assert parsed_update_data.major_version == 1
     assert parsed_update_data.minor_version == 0
     assert parsed_update_data.trailing_header_size == 0
@@ -149,7 +150,7 @@ def test_parse_accumulator_update():
 
 
 def test_serialize_accumulator_update():
-    magic = b"PNAU"
+    magic = bytes.fromhex(ACCUMULATOR_MAGIC)
     major_version = 1
     minor_version = 0
     trailing_header_size = 0
