@@ -584,7 +584,7 @@ def extract_price_info_from_accumulator_update(
         price_infos.append(
             PriceInfo(
                 seq_num=parsed_vaa["sequence"],
-                vaa=update_data,
+                vaa=vaa_str,
                 publish_time=publish_time,
                 attestation_time=publish_time,
                 last_attested_publish_time=prev_publish_time,
@@ -627,7 +627,7 @@ def compress_accumulator_update(update_data_list, encoding) -> List[str]:
     # Combine the ones with the same VAA to a list
     for update_data in update_data_list:
         parsed_update_data = parse_accumulator_update(update_data, encoding)
-        vaa = parsed_update_data["vaa"]
+        vaa = parsed_update_data.vaa
 
         if vaa not in parsed_data_dict:
             parsed_data_dict[vaa] = []
@@ -638,16 +638,16 @@ def compress_accumulator_update(update_data_list, encoding) -> List[str]:
     combined_data_list = []
     for parsed_data in parsed_data_list:
         combined_data = AccumulatorUpdate(
-            magic=parsed_data[0]["magic"],
-            major_version=parsed_data[0]["major_version"],
-            minor_version=parsed_data[0]["minor_version"],
-            trailing_header_size=parsed_data[0]["trailing_header_size"],
-            update_type=parsed_data[0]["update_type"],
-            vaa_length=parsed_data[0]["vaa_length"],
-            vaa=parsed_data[0]["vaa"],
-            num_updates=sum(len(item["updates"]) for item in parsed_data),
+            magic=parsed_data[0].magic,
+            major_version=parsed_data[0].major_version,
+            minor_version=parsed_data[0].minor_version,
+            trailing_header_size=parsed_data[0].trailing_header_size,
+            update_type=parsed_data[0].update_type,
+            vaa_length=parsed_data[0].vaa_length,
+            vaa=parsed_data[0].vaa,
+            num_updates=sum(len(item.updates) for item in parsed_data),
             updates=[
-                update for item in parsed_data for update in item["updates"]
+                update for item in parsed_data for update in item.updates
             ],  # Flatten the list of all 'updates' lists in the parsed data
         )
         combined_data_list.append(combined_data)
@@ -655,14 +655,22 @@ def compress_accumulator_update(update_data_list, encoding) -> List[str]:
     # Chunk the combined updates into chunks of 255 updates each
     chunked_updates = []
     for combined_data in combined_data_list:
-        chunked_updates.extend(
-            [
-                combined_data["updates"][i : i + MAX_MESSAGE_IN_SINGLE_UPDATE_DATA]
-                for i in range(
-                    0, len(combined_data["updates"]), MAX_MESSAGE_IN_SINGLE_UPDATE_DATA
-                )
-            ]
-        )
+        for i in range(
+            0, len(combined_data.updates), MAX_MESSAGE_IN_SINGLE_UPDATE_DATA
+        ):
+            chunk = combined_data.updates[i : i + MAX_MESSAGE_IN_SINGLE_UPDATE_DATA]
+            chunked_update = AccumulatorUpdate(
+                magic=combined_data.magic,
+                major_version=combined_data.major_version,
+                minor_version=combined_data.minor_version,
+                trailing_header_size=combined_data.trailing_header_size,
+                update_type=combined_data.update_type,
+                vaa_length=combined_data.vaa_length,
+                vaa=combined_data.vaa,
+                num_updates=len(chunk),
+                updates=chunk,
+            )
+            chunked_updates.append(chunked_update)
 
     # Serialize it into the accumulator update format
     serialized_data_list = []
@@ -698,19 +706,19 @@ def serialize_accumulator_update(data, encoding):
     str: The serialized accumulator update data as a string. If the encoding is "hex", the function returns a hexadecimal string. If the encoding is "base64", the function returns a base64 string.
     """
     serialized_data = bytearray()
-    serialized_data.extend(data["magic"])
-    serialized_data.append(data["major_version"])
-    serialized_data.append(data["minor_version"])
-    serialized_data.append(data["trailing_header_size"])
-    serialized_data.append(data["update_type"])
-    serialized_data.extend(data["vaa_length"].to_bytes(2, byteorder="big"))
-    serialized_data.extend(data["vaa"])
-    serialized_data.append(data["num_updates"])
-    for update in data["updates"]:
-        serialized_data.extend(update["message_size"].to_bytes(2, byteorder="big"))
-        serialized_data.extend(update["message"])
-        serialized_data.append(update["proof_size"])
-        for proof in update["proof"]:
+    serialized_data.extend(data.magic)
+    serialized_data.append(data.major_version)
+    serialized_data.append(data.minor_version)
+    serialized_data.append(data.trailing_header_size)
+    serialized_data.append(data.update_type)
+    serialized_data.extend(data.vaa_length.to_bytes(2, byteorder="big"))
+    serialized_data.extend(data.vaa)
+    serialized_data.append(data.num_updates)
+    for update in data.updates:
+        serialized_data.extend(update.message_size.to_bytes(2, byteorder="big"))
+        serialized_data.extend(update.message)
+        serialized_data.append(update.proof_size)
+        for proof in update.proof:
             serialized_data.extend(proof)
     if encoding == "hex":
         return serialized_data.hex()
