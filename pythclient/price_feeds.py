@@ -1,5 +1,6 @@
 import base64
 import binascii
+import struct
 from struct import unpack
 from typing import Any, Dict, List, Optional
 
@@ -14,6 +15,8 @@ P2W_FORMAT_PAYLOAD_ID = 2
 DEFAULT_VAA_ENCODING = "hex"
 
 ACCUMULATOR_MAGIC = "504e4155"
+
+MAX_MESSAGE_IN_SINGLE_UPDATE_DATA = 255
 
 
 class Price:
@@ -110,6 +113,54 @@ class PriceInfo:
         }
 
         return result
+
+
+class MerkleUpdate:
+    def __init__(
+        self, message_size: int, message: bytes, proof_size: int, proof: List[bytes]
+    ):
+        self.message_size = message_size
+        self.message = message
+        self.proof_size = proof_size
+        self.proof = proof
+
+    def __str__(self):
+        return (
+            f"MerkleUpdate(message_size={self.message_size}, message={self.message}, "
+            f"proof_size={self.proof_size}, proof={self.proof})"
+        )
+
+
+class AccumulatorUpdate:
+    def __init__(
+        self,
+        magic: bytes,
+        major_version: int,
+        minor_version: int,
+        trailing_header_size: int,
+        update_type: int,
+        vaa_length: int,
+        vaa: bytes,
+        num_updates: int,
+        updates: List[MerkleUpdate],
+    ):
+        self.magic = magic
+        self.major_version = major_version
+        self.minor_version = minor_version
+        self.trailing_header_size = trailing_header_size
+        self.update_type = update_type
+        self.vaa_length = vaa_length
+        self.vaa = vaa
+        self.num_updates = num_updates
+        self.updates = updates
+
+    def __str__(self):
+        return (
+            f"AccumulatorUpdate(magic={self.magic}, major_version={self.major_version}, "
+            f"minor_version={self.minor_version}, trailing_header_size={self.trailing_header_size}, "
+            f"update_type={self.update_type}, vaa_length={self.vaa_length}, vaa={self.vaa}, "
+            f"num_updates={self.num_updates}, updates={self.updates})"
+        )
 
 
 # Referenced from https://github.com/pyth-network/pyth-crosschain/blob/110caed6be3be7885773d2f6070b143cc13fb0ee/price_service/server/src/encoding.ts#L24
@@ -341,6 +392,8 @@ def parse_price_attestation(bytes_):
 
 # Referenced from https://github.com/pyth-network/pyth-crosschain/blob/110caed6be3be7885773d2f6070b143cc13fb0ee/price_service/server/src/rest.ts#L139
 def vaa_to_price_infos(vaa, encoding=DEFAULT_VAA_ENCODING) -> List[PriceInfo]:
+    if encode_vaa_for_chain(vaa, encoding, buffer=True)[:4].hex() == ACCUMULATOR_MAGIC:
+        return extract_price_info_from_accumulator_update(vaa, encoding)
     parsed_vaa = parse_vaa(vaa, encoding)
     batch_attestation = parse_batch_price_attestation(parsed_vaa["payload"])
     price_infos = []
@@ -353,18 +406,39 @@ def vaa_to_price_infos(vaa, encoding=DEFAULT_VAA_ENCODING) -> List[PriceInfo]:
                 parsed_vaa["emitter_chain"],
             )
         )
-
     return price_infos
 
 
-def vaa_to_price_info(price_feed_id, vaa, encoding=DEFAULT_VAA_ENCODING) -> PriceInfo:
-    if encode_vaa_for_chain(vaa, encoding, buffer=True)[:4].hex() == ACCUMULATOR_MAGIC:
-        return extract_price_info_from_accumulator_update(price_feed_id, vaa, encoding)
-    price_infos = vaa_to_price_infos(vaa, encoding)
-    for price_info in price_infos:
-        if price_info.price_feed.id == price_feed_id:
-            return price_info
+def vaa_to_price_info(id, vaa, encoding=DEFAULT_VAA_ENCODING) -> Optional[PriceInfo]:
+    """
+    This function retrieves a specific PriceInfo object from a given VAA.
 
+    Parameters:
+    id (str): The id of the PriceInfo object to find.
+    vaa (str): The VAA from which to generate the PriceInfo object.
+    encoding (str, optional): The encoding of the VAA. Defaults to hex.
+
+    Returns:
+    Optional[PriceInfo]: The PriceInfo object with the given id. If no such object is found, returns None.
+    """
+    price_infos = vaa_to_price_infos(vaa, encoding)
+    return find_price_info_by_id(price_infos, id)
+
+
+def find_price_info_by_id(price_infos, id):
+    """
+    This function searches through a list of PriceInfo objects and returns the first one that matches the provided id.
+
+    Parameters:
+    price_infos (List[PriceInfo]): A list of PriceInfo objects to search through.
+    id (str): The id of the PriceInfo object to find.
+
+    Returns:
+    PriceInfo: The first PriceInfo object in the list that matches the provided id. If no match is found, returns None.
+    """
+    for price_info in price_infos:
+        if price_info.price_feed.id == id:
+            return price_info
     return None
 
 
@@ -412,54 +486,18 @@ def price_attestation_to_price_feed(price_attestation):
 
 # Referenced from https://github.com/pyth-network/pyth-crosschain/blob/1a00598334e52fc5faf967eb1170d7fc23ad828b/price_service/server/src/rest.ts#L137
 def extract_price_info_from_accumulator_update(
-    price_feed_id, update_data, encoding
+    update_data, encoding
 ) -> Optional[Dict[str, Any]]:
-    encoded_update_data = encode_vaa_for_chain(update_data, encoding, buffer=True)
-    offset = 0
-    offset += 4  # magic
-    offset += 1  # major version
-    offset += 1  # minor version
-
-    trailing_header_size = encoded_update_data[offset]
-    offset += 1 + trailing_header_size
-
-    update_type = encoded_update_data[offset]
-    offset += 1
-
-    if update_type != 0:
-        logger.info(f"Invalid accumulator update type: {update_type}")
-        return None
-
-    vaa_length = int.from_bytes(
-        encoded_update_data[offset : offset + 2], byteorder="big"
-    )
-    offset += 2
-
-    vaa_buffer = encoded_update_data[offset : offset + vaa_length]
-    # convert vaa_buffer to string based on encoding
+    parsed_update_data = parse_accumulator_update(update_data, encoding)
+    vaa_buffer = parsed_update_data.vaa
     if encoding == "hex":
         vaa_str = vaa_buffer.hex()
     elif encoding == "base64":
         vaa_str = base64.b64encode(vaa_buffer).decode("ascii")
     parsed_vaa = parse_vaa(vaa_str, encoding)
-    offset += vaa_length
-
-    num_updates = encoded_update_data[offset]
-    offset += 1
-
-    for _ in range(num_updates):
-        message_length = int.from_bytes(
-            encoded_update_data[offset : offset + 2], byteorder="big"
-        )
-        offset += 2
-
-        message = encoded_update_data[offset : offset + message_length]
-        offset += message_length
-
-        proof_length = encoded_update_data[offset]
-        offset += 1
-        offset += proof_length  # ignore proofs
-
+    price_infos = []
+    for update in parsed_update_data.updates:
+        message = update.message
         message_offset = 0
         message_type = message[message_offset]
         message_offset += 1
@@ -470,9 +508,6 @@ def extract_price_info_from_accumulator_update(
 
         price_id = message[message_offset : message_offset + 32].hex()
         message_offset += 32
-
-        if price_id != price_feed_id:
-            continue
 
         price = int.from_bytes(
             message[message_offset : message_offset + 8], byteorder="big", signed=True
@@ -502,28 +537,242 @@ def extract_price_info_from_accumulator_update(
             message[message_offset : message_offset + 8], byteorder="big", signed=False
         )
 
-        return PriceInfo(
-            seq_num=parsed_vaa["sequence"],
-            vaa=update_data,
-            publish_time=publish_time,
-            attestation_time=publish_time,
-            last_attested_publish_time=prev_publish_time,
-            price_feed=PriceUpdate(
-                ema_price=Price(
-                    price=str(ema_price),
-                    conf=str(ema_conf),
-                    expo=expo,
-                    publish_time=publish_time,
+        price_infos.append(
+            PriceInfo(
+                seq_num=parsed_vaa["sequence"],
+                vaa=vaa_str,
+                publish_time=publish_time,
+                attestation_time=publish_time,
+                last_attested_publish_time=prev_publish_time,
+                price_feed=PriceUpdate(
+                    ema_price=Price(
+                        price=str(ema_price),
+                        conf=str(ema_conf),
+                        expo=expo,
+                        publish_time=publish_time,
+                    ),
+                    price_id=price_id,
+                    price=Price(
+                        price=str(price),
+                        conf=str(conf),
+                        expo=expo,
+                        publish_time=publish_time,
+                    ),
                 ),
-                price_id=price_id,
-                price=Price(
-                    price=str(price),
-                    conf=str(conf),
-                    expo=expo,
-                    publish_time=publish_time,
-                ),
-            ),
-            emitter_chain_id=parsed_vaa["emitter_chain"],
+                emitter_chain_id=parsed_vaa["emitter_chain"],
+            )
         )
 
-    return None
+    return price_infos
+
+
+def compress_accumulator_update(update_data_list, encoding) -> List[str]:
+    """
+    This function compresses a list of accumulator update data by combining those with the same VAA.
+    It also splits the combined updates into chunks of 255 updates each, as per the limit.
+
+    Parameters:
+    update_data_list (List[str]): A list of accumulator update data to compress.
+    encoding (str): The encoding of the update data.
+
+    Returns:
+    List[str]: A list of serialized accumulator update data. Each item in the list is a hexadecimal string representing
+    an accumulator update data. The updates with the same VAA are combined and split into chunks of 255 updates each.
+    """
+    parsed_data_dict = {}  # Use a dictionary for O(1) lookup
+    # Combine the ones with the same VAA to a list
+    for update_data in update_data_list:
+        parsed_update_data = parse_accumulator_update(update_data, encoding)
+        vaa = parsed_update_data.vaa
+
+        if vaa not in parsed_data_dict:
+            parsed_data_dict[vaa] = []
+        parsed_data_dict[vaa].append(parsed_update_data)
+    parsed_data_list = list(parsed_data_dict.values())
+
+    # Combines accumulator update data with the same VAA into a single dictionary
+    combined_data_list = []
+    for parsed_data in parsed_data_list:
+        combined_data = AccumulatorUpdate(
+            magic=parsed_data[0].magic,
+            major_version=parsed_data[0].major_version,
+            minor_version=parsed_data[0].minor_version,
+            trailing_header_size=parsed_data[0].trailing_header_size,
+            update_type=parsed_data[0].update_type,
+            vaa_length=parsed_data[0].vaa_length,
+            vaa=parsed_data[0].vaa,
+            num_updates=sum(len(item.updates) for item in parsed_data),
+            updates=[
+                update for item in parsed_data for update in item.updates
+            ],  # Flatten the list of all 'updates' lists in the parsed data
+        )
+        combined_data_list.append(combined_data)
+
+    # Chunk the combined updates into chunks of 255 updates each
+    chunked_updates = []
+    for combined_data in combined_data_list:
+        for i in range(
+            0, len(combined_data.updates), MAX_MESSAGE_IN_SINGLE_UPDATE_DATA
+        ):
+            chunk = combined_data.updates[i : i + MAX_MESSAGE_IN_SINGLE_UPDATE_DATA]
+            chunked_update = AccumulatorUpdate(
+                magic=combined_data.magic,
+                major_version=combined_data.major_version,
+                minor_version=combined_data.minor_version,
+                trailing_header_size=combined_data.trailing_header_size,
+                update_type=combined_data.update_type,
+                vaa_length=combined_data.vaa_length,
+                vaa=combined_data.vaa,
+                num_updates=len(chunk),
+                updates=chunk,
+            )
+            chunked_updates.append(chunked_update)
+
+    # Serialize it into the accumulator update format
+    serialized_data_list = []
+    for update in chunked_updates:
+        serialized_data = serialize_accumulator_update(update, encoding)
+        serialized_data_list.append(serialized_data)
+
+    return serialized_data_list
+
+
+def serialize_accumulator_update(data, encoding):
+    """
+    This function serializes an accumulator update data into a string.
+
+    Parameters:
+    data (dict): The accumulator update data to serialize. The dictionary should include the following keys:
+        - "magic": The magic of the update data.
+        - "major_version": The major version of the update data.
+        - "minor_version": The minor version of the update data.
+        - "trailing_header_size": The size of the trailing header in the update data.
+        - "update_type": The type of the update.
+        - "vaa_length": The length of the VAA.
+        - "vaa": The VAA itself.
+        - "num_updates": The number of updates in the update data.
+        - "updates": A list of dictionaries, where each dictionary represents an update and includes the following keys:
+            - "message_size": The size of the message in the update.
+            - "message": The message itself.
+            - "proof_size": The size of the proof in the update.
+            - "proof": The proof itself.
+    encoding (str): The encoding of the serialized data. Can be either "hex" or "base64".
+
+    Returns:
+    str: The serialized accumulator update data as a string. If the encoding is "hex", the function returns a hexadecimal string. If the encoding is "base64", the function returns a base64 string.
+    """
+    serialized_data = bytearray()
+    serialized_data.extend(data.magic)
+    serialized_data.append(data.major_version)
+    serialized_data.append(data.minor_version)
+    serialized_data.append(data.trailing_header_size)
+    serialized_data.append(data.update_type)
+    serialized_data.extend(data.vaa_length.to_bytes(2, byteorder="big"))
+    serialized_data.extend(data.vaa)
+    serialized_data.append(data.num_updates)
+    for update in data.updates:
+        serialized_data.extend(update.message_size.to_bytes(2, byteorder="big"))
+        serialized_data.extend(update.message)
+        serialized_data.append(update.proof_size)
+        for proof in update.proof:
+            serialized_data.extend(proof)
+    if encoding == "hex":
+        return serialized_data.hex()
+    else:
+        return base64.b64encode(serialized_data).decode("ascii")
+
+
+def parse_accumulator_update(update_data, encoding):
+    """
+    This function parses an accumulator update data.
+
+    Parameters:
+    update_data (str): The accumulator update data to parse.
+    encoding (str): The encoding of the update data.
+
+    Returns:
+    AccumulatorUpdate: An AccumulatorUpdate object containing the parsed accumulator update data. The object includes the following attributes:
+        - "magic": The magic of the update data.
+        - "major_version": The major version of the update data.
+        - "minor_version": The minor version of the update data.
+        - "trailing_header_size": The size of the trailing header in the update data.
+        - "update_type": The type of the update.
+        - "vaa_length": The length of the VAA.
+        - "vaa": The VAA itself.
+        - "num_updates": The number of updates in the update data.
+        - "updates": A list of MerkleUpdate objects, where each update includes the following attributes:
+            - "message_size": The size of the message in the update.
+            - "message": The message itself.
+            - "proof_size": The size of the proof in the update.
+            - "proof": The proof itself.
+
+    If the update type is not 0, the function logs an info message and returns None.
+    """
+    encoded_update_data = encode_vaa_for_chain(update_data, encoding, buffer=True)
+    offset = 0
+    magic = encoded_update_data[offset : offset + 4]
+    offset += 4
+    major_version = encoded_update_data[offset]
+    offset += 1
+    minor_version = encoded_update_data[offset]
+    offset += 1
+
+    trailing_header_size = encoded_update_data[offset]
+    offset += 1 + trailing_header_size
+
+    update_type = encoded_update_data[offset]
+    offset += 1
+
+    if update_type != 0:
+        logger.info(f"Invalid accumulator update type: {update_type}")
+        return None
+
+    vaa_length = int.from_bytes(
+        encoded_update_data[offset : offset + 2], byteorder="big"
+    )
+    offset += 2
+
+    vaa_buffer = encoded_update_data[offset : offset + vaa_length]
+    offset += vaa_length
+
+    num_updates = encoded_update_data[offset]
+    offset += 1
+
+    updates = []
+    for _ in range(num_updates):
+        message_size = int.from_bytes(
+            encoded_update_data[offset : offset + 2], byteorder="big"
+        )
+        offset += 2
+
+        message = encoded_update_data[offset : offset + message_size]
+        offset += message_size
+
+        proof_size = encoded_update_data[offset]
+        offset += 1
+
+        proof = []
+        for _ in range(proof_size):
+            hash = encoded_update_data[offset : offset + 20]
+            proof.append(hash)
+            offset += 20
+
+        updates.append(
+            MerkleUpdate(
+                message_size=message_size,
+                message=message,
+                proof_size=proof_size,
+                proof=proof,
+            )
+        )
+    return AccumulatorUpdate(
+        magic=magic,
+        major_version=major_version,
+        minor_version=minor_version,
+        trailing_header_size=trailing_header_size,
+        update_type=update_type,
+        vaa_length=vaa_length,
+        vaa=vaa_buffer,
+        num_updates=num_updates,
+        updates=updates,
+    )
