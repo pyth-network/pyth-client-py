@@ -390,9 +390,25 @@ def parse_price_attestation(bytes_):
     }
 
 
+def is_accumulator_update(vaa, encoding=DEFAULT_VAA_ENCODING) -> bool:
+    """
+    This function checks if a given VAA is an accumulator update.
+
+    Parameters:
+    vaa (str): The VAA to check.
+    encoding (str, optional): The encoding of the VAA. Defaults to hex.
+
+    Returns:
+    bool: True if the VAA is an accumulator update, False otherwise.
+    """
+    if encode_vaa_for_chain(vaa, encoding, buffer=True)[:4].hex() == ACCUMULATOR_MAGIC:
+        return True
+    return False
+
+
 # Referenced from https://github.com/pyth-network/pyth-crosschain/blob/110caed6be3be7885773d2f6070b143cc13fb0ee/price_service/server/src/rest.ts#L139
 def vaa_to_price_infos(vaa, encoding=DEFAULT_VAA_ENCODING) -> List[PriceInfo]:
-    if encode_vaa_for_chain(vaa, encoding, buffer=True)[:4].hex() == ACCUMULATOR_MAGIC:
+    if is_accumulator_update(vaa, encoding):
         return extract_price_info_from_accumulator_update(vaa, encoding)
     parsed_vaa = parse_vaa(vaa, encoding)
     batch_attestation = parse_batch_price_attestation(parsed_vaa["payload"])
