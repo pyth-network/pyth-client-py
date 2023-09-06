@@ -390,7 +390,7 @@ def parse_price_attestation(bytes_):
     }
 
 
-def is_accumulator_update(vaa, encoding=DEFAULT_VAA_ENCODING):
+def is_accumulator_update(vaa, encoding=DEFAULT_VAA_ENCODING) -> bool:
     """
     This function checks if a given VAA is an accumulator update.
 
