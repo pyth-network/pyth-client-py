@@ -587,7 +587,6 @@ def extract_price_info_from_accumulator_update(
 
     return price_infos
 
-
 def compress_accumulator_update(update_data_list, encoding) -> List[str]:
     """
     This function compresses a list of accumulator update data by combining those with the same VAA.
@@ -599,7 +598,7 @@ def compress_accumulator_update(update_data_list, encoding) -> List[str]:
 
     Returns:
     List[str]: A list of serialized accumulator update data. Each item in the list is a hexadecimal string representing
-    an accumulator update data. The updates with the same VAA are combined and split into chunks of 255 updates each.
+    an accumulator update data. The updates with the same VAA payload are combined and split into chunks of 255 updates each.
     """
     parsed_data_dict = {}  # Use a dictionary for O(1) lookup
     # Combine the ones with the same VAA to a list
@@ -609,11 +608,11 @@ def compress_accumulator_update(update_data_list, encoding) -> List[str]:
         if parsed_update_data is None:
             raise ValueError(f"Invalid accumulator update data: {update_data}")
 
-        vaa = parsed_update_data.vaa
+        payload = parse_vaa(parsed_update_data.vaa.hex(), "hex")["payload"]
 
-        if vaa not in parsed_data_dict:
-            parsed_data_dict[vaa] = []
-        parsed_data_dict[vaa].append(parsed_update_data)
+        if payload not in parsed_data_dict:
+            parsed_data_dict[payload] = []
+        parsed_data_dict[payload].append(parsed_update_data)
     parsed_data_list = list(parsed_data_dict.values())
 
     # Combines accumulator update data with the same VAA into a single dictionary
