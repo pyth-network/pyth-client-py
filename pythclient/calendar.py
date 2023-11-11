@@ -229,10 +229,11 @@ def get_next_market_close(asset_type: str, dt: datetime.datetime) -> int:
             second=0,
             microsecond=0,
         )
-        while not is_market_open(asset_type, next_market_close):
-            next_market_close += datetime.timedelta(days=1)
-        while is_market_open(asset_type, next_market_close):
-            next_market_close += datetime.timedelta(days=1)
+        if dt.weekday() != 4:
+            while not is_market_open(asset_type, next_market_close):
+                next_market_close += datetime.timedelta(days=1)
+            while is_market_open(asset_type, next_market_close):
+                next_market_close += datetime.timedelta(days=1)
     elif asset_type == "rates":
         if dt.date() in NYSE_EARLY_HOLIDAYS:
             if time < NYSE_EARLY_CLOSE:

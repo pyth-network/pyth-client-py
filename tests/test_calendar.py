@@ -284,6 +284,12 @@ def test_get_next_market_close():
         == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 23, 17, 0, 0, tzinfo=NY_TZ))
     )
 
+    # fx & metal within market hours on a friday (before 10pm UTC)
+    assert (
+        get_next_market_close("fx", datetime.datetime(2023, 11, 10, 7, 0, 0, tzinfo=NY_TZ))
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 11, 10, 17, 0, 0, tzinfo=NY_TZ))
+    )
+
     # fx & metal out of market hours
     assert (
         get_next_market_close("fx", FX_METAL_CLOSE_SUN_2023_6_18_16)
@@ -347,3 +353,4 @@ def test_get_next_market_close():
     # crypto
     assert get_next_market_close("crypto", CRYPTO_OPEN_WED_2023_6_21_12) == None
     assert get_next_market_close("crypto", CRYPTO_OPEN_SUN_2023_6_18_12) == None
+
