@@ -7,7 +7,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setup(
     name='pythclient',
-    version='0.1.16',
+    version='0.1.17',
     packages=['pythclient'],
     author='Pyth Developers',
     author_email='contact@pyth.network',
