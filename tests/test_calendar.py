@@ -175,13 +175,19 @@ def test_get_next_market_open():
         == format_datetime_to_unix_timestamp(datetime.datetime(2023, 6, 18, 17, 0, 0, tzinfo=NY_TZ))
     )
 
-    # fx & metal out of market hours on Sunday Dec 24 2024 after 10pm UTC
+    # fx & metal out of market hours on Sunday Dec 24 2023 after 5pm ET
     assert (
         get_next_market_open("fx", FX_METAL_HOLIDAY_SUN_2023_12_24_17)
         == format_datetime_to_unix_timestamp(datetime.datetime(2023, 12, 25, 17, 0, 0, tzinfo=NY_TZ))
     )
     assert (
         get_next_market_open("metal", FX_METAL_HOLIDAY_SUN_2023_12_24_17)
+        == format_datetime_to_unix_timestamp(datetime.datetime(2023, 12, 25, 17, 0, 0, tzinfo=NY_TZ))
+    )
+
+    # fx & metal out of market hours on holiday Dec 25 2023 before 5pm ET
+    assert (
+        get_next_market_open("fx", datetime.datetime(2023, 12, 25, 8, 15, 0, tzinfo=NY_TZ))
         == format_datetime_to_unix_timestamp(datetime.datetime(2023, 12, 25, 17, 0, 0, tzinfo=NY_TZ))
     )
 
