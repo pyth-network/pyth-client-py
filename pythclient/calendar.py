@@ -134,7 +134,9 @@ def get_next_market_open(asset_type: str, dt: datetime.datetime) -> int:
             )
             next_market_open += datetime.timedelta(days=1)
     elif asset_type in ["fx", "metal"]:
-        if dt.weekday() == 6 and time < FX_METAL_OPEN_CLOSE_TIME:
+        if (dt.weekday() == 6 and time < FX_METAL_OPEN_CLOSE_TIME) or (
+            dt.date() in FX_METAL_HOLIDAYS and time < FX_METAL_OPEN_CLOSE_TIME
+        ):
             next_market_open = dt.replace(
                 hour=FX_METAL_OPEN_CLOSE_TIME.hour,
                 minute=FX_METAL_OPEN_CLOSE_TIME.minute,
