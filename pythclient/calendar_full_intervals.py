@@ -730,7 +730,7 @@ FX_METAL_2024_INTERVALS = [
     (datetime.date(2024, 12, 22), "1700-0000"),
     (datetime.date(2024, 12, 23), "0000-0000"),
     (datetime.date(2024, 12, 24), "0000-1700"),
-    (datetime.date(2024, 12, 25), "1700-000"),
+    (datetime.date(2024, 12, 25), "1700-0000"),
     (datetime.date(2024, 12, 26), "0000-0000"),
     (datetime.date(2024, 12, 27), "0000-1700"),
     (datetime.date(2024, 12, 28), None),
