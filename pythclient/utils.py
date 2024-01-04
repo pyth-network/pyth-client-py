@@ -1,36 +1,40 @@
-import ast
-import dns.resolver
-from loguru import logger
 from typing import Optional
 
-DEFAULT_VERSION = "v2"
 
-
-# Retrieving keys via DNS TXT records should not be considered secure and is provided as a convenience only.
-# Accounts should be stored locally and verified before being used for production.
-def get_key(network: str, type: str, version: str = DEFAULT_VERSION) -> Optional[str]:
+def get_key(network: str, type: str) -> Optional[str]:
     """
-    Get the program or mapping keys from dns TXT records.
-
-    Example dns records:
-
-        devnet-program-v2.pyth.network
-        mainnet-program-v2.pyth.network
-        testnet-mapping-v2.pyth.network
-        pythnet-mapping-v2.pyth.network
+    Get the program or mapping key.
+    :param network: The network to get the key for. Either "mainnet", "devnet", "testnet", "pythnet", "pythtest-conformance", or "pythtest-crosschain".
+    :param type: The type of key to get. Either "program" or "mapping".
     """
-    url = f"{network}-{type}-{version}.pyth.network"
+    keys = {
+        "pythnet": {
+            "program": "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH",
+            "mapping": "AHtgzX45WTKfkPG53L6WYhGEXwQkN1BVknET3sVsLL8J",
+        },
+        "mainnet": {
+            "program": "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH",
+            "mapping": "AHtgzX45WTKfkPG53L6WYhGEXwQkN1BVknET3sVsLL8J",
+        },
+        "devnet": {
+            "program": "gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s",
+            "mapping": "BmA9Z6FjioHJPpjT39QazZyhDRUdZy2ezwx4GiDdE2u2",
+        },
+        "testnet": {
+            "program": "8tfDNiaEyrV6Q1U4DEXrEigs9DoDtkugzFbybENEbCDz",
+            "mapping": "AFmdnt9ng1uVxqCmqwQJDAYC5cKTkw8gJKSM5PnzuF6z",
+        },
+        "pythtest-conformance": {
+            "program": "8tfDNiaEyrV6Q1U4DEXrEigs9DoDtkugzFbybENEbCDz",
+            "mapping": "AFmdnt9ng1uVxqCmqwQJDAYC5cKTkw8gJKSM5PnzuF6z",
+        },
+        "pythtest-crosschain": {
+            "program": "gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s",
+            "mapping": "BmA9Z6FjioHJPpjT39QazZyhDRUdZy2ezwx4GiDdE2u2",
+        },
+    }
+
     try:
-        answer = dns.resolver.resolve(url, "TXT")
-    except dns.resolver.NXDOMAIN:
-        logger.error("TXT record for {} not found", url)
-        return ""
-    if len(answer) != 1:
-        logger.error("Invalid number of records returned for {}!", url)
-        return ""
-    # Example of the raw_key:
-    #     "program=FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH"
-    raw_key = ast.literal_eval(list(answer)[0].to_text())
-    # program=FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH"
-    _, key = raw_key.split("=", 1)
-    return key
+        return keys[network][type]
+    except KeyError:
+        raise Exception(f"Unknown network or type: {network}, {type}")
