@@ -16,10 +16,10 @@ def test_utils_get_mapping_key() -> None:
 def test_utils_invalid_network() -> None:
     with pytest.raises(Exception) as e:
         get_key("testdevnet", "mapping")
-    assert str(e.value) == "Unknown network: testdevnet"
+    assert str(e.value) == "Unknown network or type: testdevnet, mapping"
 
 
 def test_utils_get_invalid_type() -> None:
     with pytest.raises(Exception) as e:
         get_key("devnet", "mappingprogram")
-    assert str(e.value) == "Unknown type: mappingprogram"
+    assert str(e.value) == "Unknown network or type: devnet, mappingprogram"
