@@ -38,6 +38,7 @@ NYSE_EARLY_HOLIDAYS = [
     datetime.datetime(2023, 11, 24, tzinfo=NY_TZ).date(),
     datetime.datetime(2024, 7, 3, tzinfo=NY_TZ).date(),
     datetime.datetime(2024, 11, 29, tzinfo=NY_TZ).date(),
+    datetime.datetime(2024, 12, 24, tzinfo=NY_TZ).date(),
 ]
 
 FX_METAL_OPEN_CLOSE_TIME = datetime.time(17, 0, 0, tzinfo=NY_TZ)
