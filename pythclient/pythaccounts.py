@@ -78,7 +78,7 @@ def _read_attribute_string(buffer: bytes, offset: int) -> Tuple[Optional[str], i
     return data.decode('utf8', 'replace'), data_end
 
 
-def _parse_header(buffer: bytes, offset: int = 0, *, key: SolanaPublicKeyOrStr):
+def _parse_header(buffer: bytes, offset: int = 0, *, key: SolanaPublicKeyOrStr) -> Tuple[PythAccountType, int, int]:
     if len(buffer) - offset < _ACCOUNT_HEADER_BYTES:
         raise ValueError("Pyth account data too short")
 
