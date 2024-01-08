@@ -19,7 +19,7 @@ MAX_MESSAGE_IN_SINGLE_UPDATE_DATA = 255
 
 
 class Price:
-    def __init__(self, conf, expo, price, publish_time):
+    def __init__(self, conf, expo, price, publish_time) -> None:
         self.conf = conf
         self.expo = expo
         self.price = price
@@ -38,7 +38,7 @@ class Price:
 
 
 class PriceUpdate:
-    def __init__(self, ema_price, price_id, price):
+    def __init__(self, ema_price, price_id, price) -> None:
         self.ema_price = ema_price
         self.id = price_id
         self.price = price
@@ -66,7 +66,7 @@ class PriceInfo:
         last_attested_publish_time,
         price_feed,
         emitter_chain_id,
-    ):
+    ) -> None:
         self.seq_num = seq_num
         self.vaa = vaa
         self.publish_time = publish_time
@@ -117,7 +117,7 @@ class PriceInfo:
 class MerkleUpdate:
     def __init__(
         self, message_size: int, message: bytes, proof_size: int, proof: List[bytes]
-    ):
+    ) -> None:
         self.message_size = message_size
         self.message = message
         self.proof_size = proof_size
@@ -142,7 +142,7 @@ class AccumulatorUpdate:
         vaa: bytes,
         num_updates: int,
         updates: List[MerkleUpdate],
-    ):
+    ) -> None:
         self.magic = magic
         self.major_version = major_version
         self.minor_version = minor_version
@@ -195,7 +195,7 @@ def encode_vaa_for_chain(vaa: str, vaa_format: str, buffer=False) -> Union[bytes
 
 
 # Referenced from https://github.com/wormhole-foundation/wormhole/blob/main/sdk/js/src/vaa/wormhole.ts#L26-L56
-def parse_vaa(vaa, encoding):
+def parse_vaa(vaa: str, encoding: str) -> dict:
     vaa = cast(bytes, encode_vaa_for_chain(vaa, encoding, buffer=True))
 
     num_signers = vaa[5]
