@@ -3,6 +3,7 @@ from zoneinfo import ZoneInfo
 
 from pythclient.calendar import (get_next_market_close, get_next_market_open,
                                  is_market_open)
+from pythclient.calendar_full_intervals import EQUITY_2024_INTERVALS, FX_METAL_2024_INTERVALS, RATES_2024_INTERVALS
 
 NY_TZ = ZoneInfo("America/New_York")
 UTC_TZ = ZoneInfo("UTC")
@@ -45,6 +46,7 @@ def format_datetime_to_unix_timestamp(dt: datetime.datetime):
     timestamp = dt.astimezone(UTC_TZ).timestamp()
     unix_timestamp_utc = int(timestamp)
     return unix_timestamp_utc
+
 
 def test_is_market_open():
     # equity
@@ -378,3 +380,42 @@ def test_get_next_market_close():
     assert get_next_market_close("crypto", CRYPTO_OPEN_WED_2023_6_21_12) == None
     assert get_next_market_close("crypto", CRYPTO_OPEN_SUN_2023_6_18_12) == None
 
+
+def test_is_market_open_full():
+    start_date = datetime.datetime(2024, 1, 1, tzinfo=NY_TZ)
+    end_date = datetime.datetime(2025, 1, 1, tzinfo=NY_TZ)
+    asset_types = ["equity", "fx", "metal", "rates", "crypto"]
+
+    # Define the intervals
+    intervals = {
+        "equity": {date: interval for date, interval in EQUITY_2024_INTERVALS},
+        "fx": {date: interval for date, interval in FX_METAL_2024_INTERVALS},
+        "metal": {date: interval for date, interval in FX_METAL_2024_INTERVALS},
+        "rates": {date: interval for date, interval in RATES_2024_INTERVALS}
+    }
+
+    current_date = start_date
+    while current_date < end_date:
+        for at in asset_types:
+            if at == "crypto":
+                continue
+            # Get the interval for the date
+            interval = intervals[at].get(current_date.date())
+
+            if interval is None:
+                should_be_open = False
+            else:
+                start_time, end_time = [datetime.datetime.strptime(t, "%H%M").time() for t in interval.split('-')]
+                if start_time < end_time:
+                    should_be_open = start_time <= current_date.time() < end_time
+                else:  # Over midnight
+                    should_be_open = start_time <= current_date.time()
+
+            # Check if the market is open
+            is_open = is_market_open(at, current_date)
+
+            # Assert that the market is open if and only if it should be open
+            assert is_open == should_be_open, f"Failed for asset type: {at}, date: {current_date}"
+        
+        # Add one minute to the current date
+        current_date += datetime.timedelta(minutes=1)

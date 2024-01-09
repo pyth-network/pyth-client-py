@@ -38,6 +38,7 @@ NYSE_EARLY_HOLIDAYS = [
     datetime.datetime(2023, 11, 24, tzinfo=NY_TZ).date(),
     datetime.datetime(2024, 7, 3, tzinfo=NY_TZ).date(),
     datetime.datetime(2024, 11, 29, tzinfo=NY_TZ).date(),
+    datetime.datetime(2024, 12, 24, tzinfo=NY_TZ).date(),
 ]
 
 FX_METAL_OPEN_CLOSE_TIME = datetime.time(17, 0, 0, tzinfo=NY_TZ)
@@ -76,6 +77,11 @@ def is_market_open(asset_type: str, dt: datetime.datetime) -> bool:
     if asset_type in ["fx", "metal"]:
         if date in FX_METAL_HOLIDAYS and time < FX_METAL_OPEN_CLOSE_TIME:
             return False
+        # If the next day is a holiday, the market is closed at 5pm ET
+        if (
+            date + datetime.timedelta(days=1) in FX_METAL_HOLIDAYS
+        ) and time >= FX_METAL_OPEN_CLOSE_TIME:
+            return False
         # On Friday the market is closed after 5pm
         if day == 4 and time >= FX_METAL_OPEN_CLOSE_TIME:
             return False
@@ -84,13 +90,6 @@ def is_market_open(asset_type: str, dt: datetime.datetime) -> bool:
             return False
         # On Sunday the market is closed before 5pm
         if day == 6 and time < FX_METAL_OPEN_CLOSE_TIME:
-            return False
-        # On Sunday the market is closed after 5pm if the next day is a holiday
-        if (
-            day == 6
-            and time >= FX_METAL_OPEN_CLOSE_TIME
-            and (date + datetime.timedelta(days=1) in FX_METAL_HOLIDAYS)
-        ):
             return False
 
         return True
