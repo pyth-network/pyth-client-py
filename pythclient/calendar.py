@@ -41,15 +41,39 @@ NYSE_EARLY_HOLIDAYS = [
     datetime.datetime(2024, 12, 24, tzinfo=NY_TZ).date(),
 ]
 
-FX_METAL_OPEN_CLOSE_TIME = datetime.time(17, 0, 0, tzinfo=NY_TZ)
+FX_OPEN_CLOSE_TIME = datetime.time(17, 0, 0, tzinfo=NY_TZ)
 
 # FX_METAL_HOLIDAYS will need to be updated each year
 # From https://www.cboe.com/about/hours/fx/
-FX_METAL_HOLIDAYS = [
+FX_HOLIDAYS = [
     datetime.datetime(2023, 1, 1, tzinfo=NY_TZ).date(),
     datetime.datetime(2023, 12, 25, tzinfo=NY_TZ).date(),
     datetime.datetime(2024, 1, 1, tzinfo=NY_TZ).date(),
     datetime.datetime(2024, 12, 25, tzinfo=NY_TZ).date(),
+]
+
+METAL_OPEN_CLOSE_TIME = datetime.time(17, 0, 0, tzinfo=NY_TZ)
+
+
+# References:
+# https://www.forex.com/en-ca/help-and-support/market-trading-hours/
+METAL_EARLY_CLOSE = datetime.time(14, 30, 0, tzinfo=NY_TZ)
+
+# References:
+# https://www.ig.com/uk/help-and-support/spread-betting-and-cfds/market-details/martin-luther-king-jr-trading-hours
+# https://www.etoro.com/trading/market-hours-and-events/
+METAL_EARLY_CLOSE_OPEN = datetime.time(18, 0, 0, tzinfo=NY_TZ)
+
+# FX_METAL_HOLIDAYS will need to be updated each year
+# From https://www.cboe.com/about/hours/fx/
+METAL_HOLIDAYS = [
+    datetime.datetime(2023, 1, 1, tzinfo=NY_TZ).date(),
+    datetime.datetime(2023, 12, 25, tzinfo=NY_TZ).date(),
+    datetime.datetime(2024, 1, 1, tzinfo=NY_TZ).date(),
+    datetime.datetime(2024, 12, 25, tzinfo=NY_TZ).date(),
+]
+METAL_EARLY_HOLIDAYS = [
+    datetime.datetime(2024, 1, 15, tzinfo=NY_TZ).date(),
 ]
 
 RATES_OPEN = datetime.time(8, 0, 0, tzinfo=NY_TZ)
@@ -74,24 +98,48 @@ def is_market_open(asset_type: str, dt: datetime.datetime) -> bool:
             return True
         return False
 
-    if asset_type in ["fx", "metal"]:
-        if date in FX_METAL_HOLIDAYS and time < FX_METAL_OPEN_CLOSE_TIME:
+    if asset_type == "fx":
+        if date in FX_HOLIDAYS and time < FX_OPEN_CLOSE_TIME:
             return False
         # If the next day is a holiday, the market is closed at 5pm ET
         if (
-            date + datetime.timedelta(days=1) in FX_METAL_HOLIDAYS
-        ) and time >= FX_METAL_OPEN_CLOSE_TIME:
+            date + datetime.timedelta(days=1) in FX_HOLIDAYS
+        ) and time >= FX_OPEN_CLOSE_TIME:
             return False
         # On Friday the market is closed after 5pm
-        if day == 4 and time >= FX_METAL_OPEN_CLOSE_TIME:
+        if day == 4 and time >= FX_OPEN_CLOSE_TIME:
             return False
         # On Saturday the market is closed all the time
         if day == 5:
             return False
         # On Sunday the market is closed before 5pm
-        if day == 6 and time < FX_METAL_OPEN_CLOSE_TIME:
+        if day == 6 and time < FX_OPEN_CLOSE_TIME:
             return False
+        return True
 
+    if asset_type == "metal":
+        if date in METAL_HOLIDAYS and time < METAL_OPEN_CLOSE_TIME:
+            return False
+        # If the next day is a holiday, the market is closed at 5pm ET
+        if (
+            date + datetime.timedelta(days=1) in METAL_HOLIDAYS
+        ) and time >= METAL_OPEN_CLOSE_TIME:
+            return False
+        if (
+            date in METAL_EARLY_HOLIDAYS
+            and time >= METAL_EARLY_CLOSE
+            and time < METAL_EARLY_CLOSE_OPEN
+        ):
+            return False
+        # On Friday the market is closed after 5pm
+        if day == 4 and time >= METAL_OPEN_CLOSE_TIME:
+            return False
+        # On Saturday the market is closed all the time
+        if day == 5:
+            return False
+        # On Sunday the market is closed before 5pm
+        if day == 6 and time < METAL_OPEN_CLOSE_TIME:
+            return False
         return True
 
     if asset_type == "rates":
@@ -132,25 +180,62 @@ def get_next_market_open(asset_type: str, dt: datetime.datetime) -> int:
                 microsecond=0,
             )
             next_market_open += datetime.timedelta(days=1)
-    elif asset_type in ["fx", "metal"]:
-        if (dt.weekday() == 6 and time < FX_METAL_OPEN_CLOSE_TIME) or (
-            dt.date() in FX_METAL_HOLIDAYS and time < FX_METAL_OPEN_CLOSE_TIME
+    elif asset_type == "fx":
+        if (dt.weekday() == 6 and time < FX_OPEN_CLOSE_TIME) or (
+            dt.date() in FX_HOLIDAYS and time < FX_OPEN_CLOSE_TIME
         ):
             next_market_open = dt.replace(
-                hour=FX_METAL_OPEN_CLOSE_TIME.hour,
-                minute=FX_METAL_OPEN_CLOSE_TIME.minute,
+                hour=FX_OPEN_CLOSE_TIME.hour,
+                minute=FX_OPEN_CLOSE_TIME.minute,
                 second=0,
                 microsecond=0,
             )
         else:
             next_market_open = dt.replace(
-                hour=FX_METAL_OPEN_CLOSE_TIME.hour,
-                minute=FX_METAL_OPEN_CLOSE_TIME.minute,
+                hour=FX_OPEN_CLOSE_TIME.hour,
+                minute=FX_OPEN_CLOSE_TIME.minute,
                 second=0,
                 microsecond=0,
             )
             while is_market_open(asset_type, next_market_open):
                 next_market_open += datetime.timedelta(days=1)
+    elif asset_type == "metal":
+        if dt.date() in METAL_EARLY_HOLIDAYS and time < METAL_EARLY_CLOSE_OPEN:
+            next_market_open = dt.replace(
+                hour=METAL_EARLY_CLOSE_OPEN.hour,
+                minute=METAL_EARLY_CLOSE_OPEN.minute,
+                second=0,
+                microsecond=0,
+            )
+        elif dt.date() in METAL_EARLY_HOLIDAYS and time >= METAL_EARLY_CLOSE_OPEN:
+            next_market_open = dt.replace(
+                hour=METAL_OPEN_CLOSE_TIME.hour,
+                minute=METAL_OPEN_CLOSE_TIME.minute,
+                second=0,
+                microsecond=0,
+            )
+            next_market_open += datetime.timedelta(days=1)
+            while is_market_open(asset_type, next_market_open):
+                next_market_open += datetime.timedelta(days=1)
+        else:
+            if (dt.weekday() == 6 and time < METAL_OPEN_CLOSE_TIME) or (
+                dt.date() in METAL_HOLIDAYS and time < METAL_OPEN_CLOSE_TIME
+            ):
+                next_market_open = dt.replace(
+                    hour=METAL_OPEN_CLOSE_TIME.hour,
+                    minute=METAL_OPEN_CLOSE_TIME.minute,
+                    second=0,
+                    microsecond=0,
+                )
+            else:
+                next_market_open = dt.replace(
+                    hour=METAL_OPEN_CLOSE_TIME.hour,
+                    minute=METAL_OPEN_CLOSE_TIME.minute,
+                    second=0,
+                    microsecond=0,
+                )
+                while is_market_open(asset_type, next_market_open):
+                    next_market_open += datetime.timedelta(days=1)
     elif asset_type == "rates":
         if time < RATES_OPEN:
             next_market_open = dt.replace(
@@ -244,10 +329,10 @@ def get_next_market_close(asset_type: str, dt: datetime.datetime) -> int:
         ):
             next_market_close += datetime.timedelta(days=1)
 
-    elif asset_type in ["fx", "metal"]:
+    elif asset_type == "fx":
         next_market_close = dt.replace(
-            hour=FX_METAL_OPEN_CLOSE_TIME.hour,
-            minute=FX_METAL_OPEN_CLOSE_TIME.minute,
+            hour=FX_OPEN_CLOSE_TIME.hour,
+            minute=FX_OPEN_CLOSE_TIME.minute,
             second=0,
             microsecond=0,
         )
@@ -256,6 +341,36 @@ def get_next_market_close(asset_type: str, dt: datetime.datetime) -> int:
                 next_market_close += datetime.timedelta(days=1)
             while is_market_open(asset_type, next_market_close):
                 next_market_close += datetime.timedelta(days=1)
+    elif asset_type == "metal":
+        if dt.date() in METAL_EARLY_HOLIDAYS and time < METAL_EARLY_CLOSE:
+            next_market_close = dt.replace(
+                hour=METAL_EARLY_CLOSE.hour,
+                minute=METAL_EARLY_CLOSE.minute,
+                second=0,
+                microsecond=0,
+            )
+        elif dt.date() in METAL_EARLY_HOLIDAYS and time >= METAL_EARLY_CLOSE:
+            next_market_close = dt.replace(
+                hour=METAL_OPEN_CLOSE_TIME.hour,
+                minute=METAL_OPEN_CLOSE_TIME.minute,
+                second=0,
+                microsecond=0,
+            )
+            next_market_close += datetime.timedelta(days=1)
+            while is_market_open(asset_type, next_market_close):
+                next_market_close += datetime.timedelta(days=1)
+        else:
+            next_market_close = dt.replace(
+                hour=METAL_OPEN_CLOSE_TIME.hour,
+                minute=METAL_OPEN_CLOSE_TIME.minute,
+                second=0,
+                microsecond=0,
+            )
+            if dt.weekday() != 4:
+                while not is_market_open(asset_type, next_market_close):
+                    next_market_close += datetime.timedelta(days=1)
+                while is_market_open(asset_type, next_market_close):
+                    next_market_close += datetime.timedelta(days=1)
     elif asset_type == "rates":
         if dt.date() in NYSE_EARLY_HOLIDAYS:
             if time < NYSE_EARLY_CLOSE:

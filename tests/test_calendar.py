@@ -3,7 +3,10 @@ from zoneinfo import ZoneInfo
 
 from pythclient.calendar import (get_next_market_close, get_next_market_open,
                                  is_market_open)
-from pythclient.calendar_full_intervals import EQUITY_2024_INTERVALS, FX_METAL_2024_INTERVALS, RATES_2024_INTERVALS
+from pythclient.calendar_full_intervals import (EQUITY_2024_INTERVALS,
+                                                FX_2024_INTERVALS,
+                                                METAL_2024_INTERVALS,
+                                                RATES_2024_INTERVALS)
 
 NY_TZ = ZoneInfo("America/New_York")
 UTC_TZ = ZoneInfo("UTC")
@@ -25,6 +28,10 @@ FX_METAL_CLOSE_SUN_2023_6_18_16 = datetime.datetime(2023, 6, 18, 16, 0, 0, tzinf
 FX_METAL_HOLIDAY_SUN_2023_1_1 = datetime.datetime(2023, 1, 1, tzinfo=NY_TZ)
 FX_METAL_HOLIDAY_SUN_2023_12_24_17 = datetime.datetime(2023, 12, 24, 17, 0, 0, tzinfo=NY_TZ)
 FX_METAL_HOLIDAY_SUN_2023_12_31_17 = datetime.datetime(2023, 12, 31, 17, 0, 0, tzinfo=NY_TZ)
+
+METAL_EARLY_HOLIDAY_MON_2024_1_15_13 = datetime.datetime(2024, 1, 15, 13, 0, 0, tzinfo=NY_TZ)
+METAL_EARLY_HOLIDAY_MON_2024_1_15_17 = datetime.datetime(2024, 1, 15, 17, 0, 0, tzinfo=NY_TZ)
+METAL_EARLY_HOLIDAY_MON_2024_1_15_18 = datetime.datetime(2024, 1, 15, 18, 0, 0, tzinfo=NY_TZ)
 
 # Define constants for rates market
 RATES_OPEN_WED_2023_6_21_12 = datetime.datetime(2023, 6, 21, 8, 0, 0, tzinfo=NY_TZ)
@@ -78,6 +85,12 @@ def test_is_market_open():
     # fx & metal holiday
     assert is_market_open("fx", FX_METAL_HOLIDAY_SUN_2023_1_1) == False
     assert is_market_open("metal", FX_METAL_HOLIDAY_SUN_2023_1_1) == False
+
+    # metal early holiday
+    assert is_market_open("metal", METAL_EARLY_HOLIDAY_MON_2024_1_15_13) == True
+    assert is_market_open("metal", METAL_EARLY_HOLIDAY_MON_2024_1_15_17) == False
+    assert is_market_open("metal", METAL_EARLY_HOLIDAY_MON_2024_1_15_18) == True
+  
 
     # fx & metal out of market hours on Sunday Dec 24 2023 after 10pm UTC
     assert is_market_open("fx", FX_METAL_HOLIDAY_SUN_2023_12_24_17) == False
@@ -202,6 +215,21 @@ def test_get_next_market_open():
         get_next_market_open("metal", FX_METAL_HOLIDAY_SUN_2023_1_1)
         == format_datetime_to_unix_timestamp(datetime.datetime(2023, 1, 1, 17, 0, 0, tzinfo=NY_TZ))
     )
+
+    # metal early holiday
+    assert (
+        get_next_market_open("metal", METAL_EARLY_HOLIDAY_MON_2024_1_15_13)
+        == format_datetime_to_unix_timestamp(datetime.datetime(2024, 1, 15, 18, 0, 0, tzinfo=NY_TZ))
+    )
+    assert (
+        get_next_market_open("metal", METAL_EARLY_HOLIDAY_MON_2024_1_15_17)
+        == format_datetime_to_unix_timestamp(datetime.datetime(2024, 1, 15, 18, 0, 0, tzinfo=NY_TZ))
+    )
+    assert (
+        get_next_market_open("metal", METAL_EARLY_HOLIDAY_MON_2024_1_15_18)
+        == format_datetime_to_unix_timestamp(datetime.datetime(2024, 1, 21, 17, 0, 0, tzinfo=NY_TZ))
+    )
+    
 
     # rates within market hours
     assert (
@@ -336,6 +364,20 @@ def test_get_next_market_close():
         == format_datetime_to_unix_timestamp(datetime.datetime(2023, 1, 6, 17, 0, 0, tzinfo=NY_TZ))
     )
 
+    # metal early holiday
+    assert (
+        get_next_market_close("metal", METAL_EARLY_HOLIDAY_MON_2024_1_15_13)
+        == format_datetime_to_unix_timestamp(datetime.datetime(2024, 1, 15, 14, 30, 0, tzinfo=NY_TZ))
+    )
+    assert (
+        get_next_market_close("metal", METAL_EARLY_HOLIDAY_MON_2024_1_15_17)
+        == format_datetime_to_unix_timestamp(datetime.datetime(2024, 1, 19, 17, 0, 0, tzinfo=NY_TZ))
+    )
+    assert (
+        get_next_market_close("metal", METAL_EARLY_HOLIDAY_MON_2024_1_15_18)
+        == format_datetime_to_unix_timestamp(datetime.datetime(2024, 1, 19, 17, 0, 0, tzinfo=NY_TZ))
+    )
+
     # rates within market hours
     assert (
         get_next_market_close("rates", RATES_OPEN_WED_2023_6_21_12)
@@ -386,13 +428,26 @@ def test_is_market_open_full():
     end_date = datetime.datetime(2025, 1, 1, tzinfo=NY_TZ)
     asset_types = ["equity", "fx", "metal", "rates", "crypto"]
 
-    # Define the intervals
-    intervals = {
-        "equity": {date: interval for date, interval in EQUITY_2024_INTERVALS},
-        "fx": {date: interval for date, interval in FX_METAL_2024_INTERVALS},
-        "metal": {date: interval for date, interval in FX_METAL_2024_INTERVALS},
-        "rates": {date: interval for date, interval in RATES_2024_INTERVALS}
+    all_intervals = {
+        "equity": {},
+        "fx": {},
+        "metal": {},
+        "rates": {},
     }
+
+    data_sources = {
+        "equity": EQUITY_2024_INTERVALS,
+        "fx": FX_2024_INTERVALS,
+        "metal": METAL_2024_INTERVALS,
+        "rates": RATES_2024_INTERVALS,
+    }
+
+    for asset_type, data in data_sources.items():
+        for date, interval in data:
+            if date not in all_intervals[asset_type]:
+                all_intervals[asset_type][date] = []
+            if interval != None:
+                all_intervals[asset_type][date].append(interval)
 
     current_date = start_date
     while current_date < end_date:
@@ -400,22 +455,35 @@ def test_is_market_open_full():
             if at == "crypto":
                 continue
             # Get the interval for the date
-            interval = intervals[at].get(current_date.date())
+            intervals = all_intervals[at].get(current_date.date())
 
-            if interval is None:
+            if not intervals:
                 should_be_open = False
             else:
-                start_time, end_time = [datetime.datetime.strptime(t, "%H%M").time() for t in interval.split('-')]
-                if start_time < end_time:
-                    should_be_open = start_time <= current_date.time() < end_time
-                else:  # Over midnight
-                    should_be_open = start_time <= current_date.time()
+                should_be_open = is_time_in_intervals(current_date.time(), intervals)
+                pass
 
             # Check if the market is open
             is_open = is_market_open(at, current_date)
 
             # Assert that the market is open if and only if it should be open
-            assert is_open == should_be_open, f"Failed for asset type: {at}, date: {current_date}"
-        
+            assert (
+                is_open == should_be_open
+            ), f"Failed for asset type: {at}, date: {current_date}"
+
         # Add one minute to the current date
         current_date += datetime.timedelta(minutes=1)
+
+
+def is_time_in_intervals(current_time, intervals):
+    for interval in intervals:
+        start_time, end_time = [
+            datetime.datetime.strptime(t, "%H%M").time() for t in interval.split("-")
+        ]
+        if start_time < end_time:
+            if start_time <= current_time < end_time:
+                return True
+        else:  # Over midnight
+            if start_time <= current_time or current_time < end_time:
+                return True
+    return False
