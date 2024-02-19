@@ -74,6 +74,7 @@ METAL_HOLIDAYS = [
 ]
 METAL_EARLY_HOLIDAYS = [
     datetime.datetime(2024, 1, 15, tzinfo=NY_TZ).date(),
+    datetime.datetime(2024, 2, 19, tzinfo=NY_TZ).date(),
 ]
 
 RATES_OPEN = datetime.time(8, 0, 0, tzinfo=NY_TZ)
