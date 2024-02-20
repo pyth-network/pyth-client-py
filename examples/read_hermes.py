@@ -2,7 +2,7 @@
 
 import asyncio
 
-from pythclient.hermes import HermesClient, PriceFeed
+from pythclient.hermes import HermesClient
 
 async def get_hermes_prices():
     hermes_client = HermesClient([])
