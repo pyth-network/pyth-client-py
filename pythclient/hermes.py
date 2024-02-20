@@ -30,7 +30,6 @@ class HermesClient:
         self.feed_ids = feed_ids
         self.pending_feed_ids = feed_ids
         self.prices_dict: dict[str, PriceFeed] = {}
-        self.client = httpx.AsyncClient()
         self.endpoint = endpoint
         self.ws_endpoint = ws_endpoint
         self.feed_batch_size = feed_batch_size # max number of feed IDs to query at once in https requests
@@ -42,7 +41,8 @@ class HermesClient:
 
         url = os.path.join(self.endpoint, "api/price_feed_ids")
 
-        data = (await self.client.get(url)).json()
+        async with httpx.AsyncClient() as client:
+            data = (await client.get(url)).json()
 
         return data
 
@@ -102,7 +102,8 @@ class HermesClient:
         else:
             parse_unsupported_version(version)
 
-        data = (await self.client.get(url, params=params)).json()
+        async with httpx.AsyncClient() as client:
+            data = (await client.get(url, params=params)).json()
 
         if version==1:
             results = []
@@ -127,7 +128,8 @@ class HermesClient:
         else:
             parse_unsupported_version(version)
 
-        data = (await self.client.get(url, params=params)).json()
+        async with httpx.AsyncClient() as client:
+            data = (await client.get(url, params=params)).json()
 
         if version==1:
             price_feed = self.extract_price_feed_v1(data)
