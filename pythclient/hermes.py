@@ -33,7 +33,7 @@ class HermesClient:
         self.client = httpx.AsyncClient()
         self.endpoint = endpoint
         self.ws_endpoint = ws_endpoint
-        self.feed_batch_size = feed_batch_size
+        self.feed_batch_size = feed_batch_size # max number of feed IDs to query at once in https requests
 
     async def get_price_feed_ids(self) -> list[str]:
         """
@@ -70,7 +70,7 @@ class HermesClient:
     @staticmethod
     def extract_price_feed_v2(data: dict) -> list[PriceFeed]:
         """
-        Extracts PriceFeed objects from the v2 JSON response (multiple price feeds) from Hermes.
+        Extracts PriceFeed objects from the v2 JSON response (array of price feeds) from Hermes.
         """
         update_data = data["binary"]["data"]
 
@@ -140,7 +140,7 @@ class HermesClient:
         """
         Queries the Hermes http endpoint for the latest price feeds for all feed IDs in the class object.
 
-        There are limitations on the number of feed IDs that can be queried at once, so this function queries the feed IDs in batches.
+        There is a limit on the number of feed IDs that can be queried at once, so this function queries the feed IDs in batches.
         """
         pyth_prices_latest = []
         i = 0
@@ -159,7 +159,7 @@ class HermesClient:
         """
         if version != 1:
             parse_unsupported_version(version)
-
+        
         async with websockets.connect(self.ws_endpoint) as ws:
             while True:
                 # add new price feed ids to the ws subscription
@@ -188,33 +188,3 @@ class HermesClient:
 
                 except Exception as e:
                     raise Exception(f"Error in price_update message: {msg}") from e
-
-
-async def main():
-    hermes_client = HermesClient([])
-    feed_ids = await hermes_client.get_price_feed_ids()
-    feed_ids_rel = feed_ids[:50]
-    version = 2
-
-    hermes_client.add_feed_ids(feed_ids_rel)
-    
-    prices_latest = await hermes_client.get_pyth_prices_latest(feed_ids[:50], version=version)
-
-    try:
-        price_at_time = await hermes_client.get_pyth_price_at_time(feed_ids[0], 1_700_000_000, version=version)
-        print(price_at_time)
-    except Exception as e:
-        print(f"Error in get_pyth_price_at_time, {e}")
-
-    all_prices = await hermes_client.get_all_prices(version=version)
-
-    print("Starting web socket...")
-    ws_call = hermes_client.ws_pyth_prices(version=version)
-    asyncio.create_task(ws_call)
-
-    while True:
-        await asyncio.sleep(1)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

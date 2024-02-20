@@ -50,24 +50,24 @@ def data_v2():
         },
         "parsed": [
             {
-            "id": "e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
-            "price": {
-                "price": "5190075917635",
-                "conf": "2661582364",
-                "expo": -8,
-                "publish_time": 1708363256
-            },
-            "ema_price": {
-                "price": "5209141800000",
-                "conf": "3290086600",
-                "expo": -8,
-                "publish_time": 1708363256
-            },
-            "metadata": {
-                "slot": 125976528,
-                "proof_available_time": 1708363257,
-                "prev_publish_time": 1708363255
-            }
+                "id": "e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
+                "price": {
+                    "price": "5190075917635",
+                    "conf": "2661582364",
+                    "expo": -8,
+                    "publish_time": 1708363256
+                },
+                "ema_price": {
+                    "price": "5209141800000",
+                    "conf": "3290086600",
+                    "expo": -8,
+                    "publish_time": 1708363256
+                },
+                "metadata": {
+                    "slot": 125976528,
+                    "proof_available_time": 1708363257,
+                    "prev_publish_time": 1708363255
+                }
             }
         ]
     }
@@ -79,7 +79,7 @@ def mock_get_price_feed_ids(mocker: MockerFixture):
     return async_mock
 
 @pytest.mark.asyncio
-async def test_hermes_add_feed_ids(hermes_client: HermesClient):
+async def test_hermes_add_feed_ids(hermes_client: HermesClient, mock_get_price_feed_ids: AsyncMock):
     mock_get_price_feed_ids.return_value = ["ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace"]
 
     feed_ids = await hermes_client.get_price_feed_ids()
@@ -89,10 +89,8 @@ async def test_hermes_add_feed_ids(hermes_client: HermesClient):
 
     hermes_client.add_feed_ids(feed_ids)
 
-    assert hermes_client.feed_ids == list(set(feed_ids_pre + feed_ids))
-    assert hermes_client.pending_feed_ids == list(set(pending_feed_ids_pre + feed_ids))
-
-
+    assert set(hermes_client.feed_ids) == set(feed_ids_pre + feed_ids)
+    assert set(hermes_client.pending_feed_ids) == set(pending_feed_ids_pre + feed_ids)
 
 def test_hermes_extract_price_feed_v1(hermes_client: HermesClient, data_v1: dict):
     price_feed = hermes_client.extract_price_feed_v1(data_v1)
@@ -103,5 +101,6 @@ def test_hermes_extract_price_feed_v1(hermes_client: HermesClient, data_v1: dict
 def test_hermes_extract_price_feed_v2(hermes_client: HermesClient, data_v2: dict):
     price_feed = hermes_client.extract_price_feed_v2(data_v2)
 
-    assert isinstance(price_feed, dict)
-    assert set(price_feed.keys()) == set(PriceFeed.__annotations__.keys())
+    assert isinstance(price_feed, list)
+    assert isinstance(price_feed[0], dict)
+    assert set(price_feed[0].keys()) == set(PriceFeed.__annotations__.keys())
