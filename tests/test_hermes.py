@@ -82,7 +82,7 @@ def mock_get_price_feed_ids(mocker: MockerFixture):
 async def test_hermes_add_feed_ids(hermes_client: HermesClient):
     mock_get_price_feed_ids.return_value = ["ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace"]
 
-    feed_ids = hermes_client.get_price_feed_ids()
+    feed_ids = await hermes_client.get_price_feed_ids()
 
     feed_ids_pre = hermes_client.feed_ids
     pending_feed_ids_pre = hermes_client.pending_feed_ids
@@ -100,7 +100,7 @@ def test_hermes_extract_price_feed_v1(hermes_client: HermesClient, data_v1: dict
     assert isinstance(price_feed, dict)
     assert set(price_feed.keys()) == set(PriceFeed.__annotations__.keys())        
     
-def test_hermes_extract_price_feed_v2(data_v2: dict):
+def test_hermes_extract_price_feed_v2(hermes_client: HermesClient, data_v2: dict):
     price_feed = hermes_client.extract_price_feed_v2(data_v2)
 
     assert isinstance(price_feed, dict)
