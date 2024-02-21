@@ -4,11 +4,17 @@ from pytest_mock import MockerFixture
 
 from mock import AsyncMock
 
+import httpx
+
 from pythclient.hermes import HermesClient, PriceFeed, parse_unsupported_version
 
 @pytest.fixture
+def feed_id():
+    return "e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43"
+
+@pytest.fixture
 def feed_ids():
-    return ["e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43"]
+    return ["e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43", "ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace"]
 
 @pytest.fixture
 def hermes_client(feed_ids):
@@ -72,17 +78,37 @@ def data_v2():
         ]
     }
 
-def test_parse_unsupported_version():
-    with pytest.raises(ValueError):
-        parse_unsupported_version(3)
-    with pytest.raises(TypeError):
-        parse_unsupported_version("3")
+@pytest.fixture
+def json_get_price_feed_ids():
+    return ["e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43", "ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace"]
+
+@pytest.fixture
+def json_get_pyth_prices_latest_v1(feed_ids: list[str]):
+    return [{'id': feed_ids[0], 'price': {'price': '135077', 'conf': '69', 'expo': -5, 'publish_time': 1708529661}, 'ema_price': {'price': '135182', 'conf': '52', 'expo': -5, 'publish_time': 1708529661}, 'vaa': 'UE5BVQEAAAADuAEAAAADDQFOmUMU+Z4r00C4N2LLbib67MfjUQrRDE9JCMD2rRAbHw/wKlgC1RgVuom5U+XO3mTFBUySDPxVLdKZT2+kSPNPAQLUFqHSI4KJPqeD0kt+JojinHUrlMFPw6y/tq9Go/izICpUhJY0+RUoQQ1it5jJKhKIe0GOVCWDN3M8WZwjDNW1AQTpTokfNehR1p7GQdWOCoEiec0ARzKkAHYkIJAOaHGUOhXrvL2g2P/nXZzBK32a67vI2ia1e/sZN0rLclEobzDgAAbGveTKWcp9znmPAPAA1mGf+ZeJy7eXN/9vWrdEZc2wQ1cRO0eYAUcMMLAKNJ80lTKN7yxn0sekTUN1NSDdOSctAAdm8xF1ucpBgaOK7vo+OoXZa2nJ5vNxbUM99qvVxeg6sCMqwVD03/BD2VeuUxGGJUIJgbi6RViZoEahk2GcTE5kAQiwuLqaPQ8YJgYJ2ODBVZHXzTosLVWpxJQr1RwCvBpNKTiBFX6TMXJk6cWgKpi0siRFkMrMXuVApOMUbXtFGHmoAQoyfR9lYa/G8reoSK/NUaN2eNWgEpODlNlVRPSC1pe3YRG7BaGMyyOLc4dF3NDO/Mv8GERLRnq/5uk6hZmfMrdaAQsdCecWyLR6ajfuhZQXqXvSKYlkLum6WmWh1Rgytaiq3lXIQ0KzNxplogC7/uDxaICmwFMQIe5j+0vkQjK0YRtkAAwPqtN22f08AAFJ9vkLJ2EHNrzRqgpii3hGM4B+lqipvCT1Zwrrc4Akm2cT8jQvta08zHOGA9upZuyRefMKtvIrAQ0BoSlqog4qD/tABWgvxxCP0S7leutd1BtdcPkDMOyIaRt4HujJn4K4+7tqsukqkvdsm9kffRt2apxDLHpLttvCAQ4j24Btj0Z+U7soibfa/1asb/u+sDzydMZPiMEf6441IRaGdRHaeo9pCKzoaUc8xBcktFHsa7hZR8bE1xiYzCJzABB5St+Lvp/I2XXIjLB0TnscZRs/TDnRGl0N0UudLZ7BNgmtOCD8gLtvrnpSOegfeO+yEbHsAosn/CJVD1jgxuQuARLEIz8Z8yew/zDanqL+zjnR3GayU3ddKqP8AlGuxZjZNXEsQZP93ivcRgX14VyK+qxX9bHmsb/5+ljg3rNaokbyAWXWF/0AAAAAABrhAfrtrFhR4yubI7X5QRqMK6xKrj7U3XuBHdGnLqSqcQAAAAACfpqyAUFVV1YAAAAAAAeGqjMAACcQiDrN+zmqsRbApltVCbB2uiQTTXkBAFUAMRKwOkHJEO1EaFKqz2cRjLG+xnss0LmiFMWMwOqi7MoAAAAAAAIPpQAAAAAAAABF////+wAAAABl1hf9AAAAAGXWF/0AAAAAAAIQDgAAAAAAAAA0Crt2twYzlx9tlARo8EHFjGit6NU5uJVQez40nh22JSTHSjgQajW5RNeQbb732lp/y/9sv9HmENJElTPq3K22/AizzBGRk8LG9r40CWoY4KWiKxi9UqTvbO8hGd/Q6XyH+vrfu68/YWiqdx50GJkhYQS/nLfF9lgMMWf+svoFsyU8hbanvEjRht/xhRD30QKgQ0XqHBBRB5x1oagos+qIqYZY6Izt6SpS/Fj4p6qUrezAAEmVz83V+LurKg3kaurFWAzvwhnsQyop'}, {'id': feed_ids[1], 'price': {'price': '939182', 'conf': '1549', 'expo': -8, 'publish_time': 1708529661}, 'ema_price': {'price': '945274', 'conf': '2273', 'expo': -8, 'publish_time': 1708529661}, 'vaa': 'UE5BVQEAAAADuAEAAAADDQFOmUMU+Z4r00C4N2LLbib67MfjUQrRDE9JCMD2rRAbHw/wKlgC1RgVuom5U+XO3mTFBUySDPxVLdKZT2+kSPNPAQLUFqHSI4KJPqeD0kt+JojinHUrlMFPw6y/tq9Go/izICpUhJY0+RUoQQ1it5jJKhKIe0GOVCWDN3M8WZwjDNW1AQTpTokfNehR1p7GQdWOCoEiec0ARzKkAHYkIJAOaHGUOhXrvL2g2P/nXZzBK32a67vI2ia1e/sZN0rLclEobzDgAAbGveTKWcp9znmPAPAA1mGf+ZeJy7eXN/9vWrdEZc2wQ1cRO0eYAUcMMLAKNJ80lTKN7yxn0sekTUN1NSDdOSctAAdm8xF1ucpBgaOK7vo+OoXZa2nJ5vNxbUM99qvVxeg6sCMqwVD03/BD2VeuUxGGJUIJgbi6RViZoEahk2GcTE5kAQiwuLqaPQ8YJgYJ2ODBVZHXzTosLVWpxJQr1RwCvBpNKTiBFX6TMXJk6cWgKpi0siRFkMrMXuVApOMUbXtFGHmoAQoyfR9lYa/G8reoSK/NUaN2eNWgEpODlNlVRPSC1pe3YRG7BaGMyyOLc4dF3NDO/Mv8GERLRnq/5uk6hZmfMrdaAQsdCecWyLR6ajfuhZQXqXvSKYlkLum6WmWh1Rgytaiq3lXIQ0KzNxplogC7/uDxaICmwFMQIe5j+0vkQjK0YRtkAAwPqtN22f08AAFJ9vkLJ2EHNrzRqgpii3hGM4B+lqipvCT1Zwrrc4Akm2cT8jQvta08zHOGA9upZuyRefMKtvIrAQ0BoSlqog4qD/tABWgvxxCP0S7leutd1BtdcPkDMOyIaRt4HujJn4K4+7tqsukqkvdsm9kffRt2apxDLHpLttvCAQ4j24Btj0Z+U7soibfa/1asb/u+sDzydMZPiMEf6441IRaGdRHaeo9pCKzoaUc8xBcktFHsa7hZR8bE1xiYzCJzABB5St+Lvp/I2XXIjLB0TnscZRs/TDnRGl0N0UudLZ7BNgmtOCD8gLtvrnpSOegfeO+yEbHsAosn/CJVD1jgxuQuARLEIz8Z8yew/zDanqL+zjnR3GayU3ddKqP8AlGuxZjZNXEsQZP93ivcRgX14VyK+qxX9bHmsb/5+ljg3rNaokbyAWXWF/0AAAAAABrhAfrtrFhR4yubI7X5QRqMK6xKrj7U3XuBHdGnLqSqcQAAAAACfpqyAUFVV1YAAAAAAAeGqjMAACcQiDrN+zmqsRbApltVCbB2uiQTTXkBAFUASWAWJeGjQsH5DD/moDrgJRmRodduSA0nQVJMKQN74ooAAAAAAA5UrgAAAAAAAAYN////+AAAAABl1hf9AAAAAGXWF/0AAAAAAA5segAAAAAAAAjhCofSSh+aiBKjNaU+6ZbH8TlrF2uCFMh/5ts6kGbO5HTy0DjKjBftORAYo1rjK75a2IgA2CgrbhU7jgoohiwnjYZjFZjCdn5MN5g66N44JEVMsvQkw7xATLYHjjwTFxVNSlb0fK71JG8U3dYnQYukR2GGWekBqlOKSGf+svoFsyU8hbanvEjRht/xhRD30QKgQ0XqHBBRB5x1oagos+qIqYZY6Izt6SpS/Fj4p6qUrezAAEmVz83V+LurKg3kaurFWAzvwhnsQyop'}]
+
+@pytest.fixture
+def json_get_pyth_prices_latest_v2(feed_ids: list[str]):
+    return {'binary': {'encoding': 'base64', 'data': ['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']}, 'parsed': [{'id': feed_ids[0], 'price': {'price': '345341366', 'conf': '315539', 'expo': -8, 'publish_time': 1708529433}, 'ema_price': {'price': '345109090', 'conf': '338082', 'expo': -8, 'publish_time': 1708529433}, 'metadata': {'slot': 126265515, 'proof_available_time': 1708529435, 'prev_publish_time': 1708529433}}, {'id': feed_ids[1], 'price': {'price': '39939675', 'conf': '38766', 'expo': -5, 'publish_time': 1708529433}, 'ema_price': {'price': '39935880', 'conf': '40150', 'expo': -5, 'publish_time': 1708529433}, 'metadata': {'slot': 126265515, 'proof_available_time': 1708529435, 'prev_publish_time': 1708529433}}]}
+
+@pytest.fixture
+def json_get_pyth_price_at_time_v1(feed_id: str):
+    return {'id': feed_id, 'price': {'price': '135077', 'conf': '69', 'expo': -5, 'publish_time': 1708529661}, 'ema_price': {'price': '135182', 'conf': '52', 'expo': -5, 'publish_time': 1708529661}, 'vaa': 'UE5BVQEAAAADuAEAAAADDQFOmUMU+Z4r00C4N2LLbib67MfjUQrRDE9JCMD2rRAbHw/wKlgC1RgVuom5U+XO3mTFBUySDPxVLdKZT2+kSPNPAQLUFqHSI4KJPqeD0kt+JojinHUrlMFPw6y/tq9Go/izICpUhJY0+RUoQQ1it5jJKhKIe0GOVCWDN3M8WZwjDNW1AQTpTokfNehR1p7GQdWOCoEiec0ARzKkAHYkIJAOaHGUOhXrvL2g2P/nXZzBK32a67vI2ia1e/sZN0rLclEobzDgAAbGveTKWcp9znmPAPAA1mGf+ZeJy7eXN/9vWrdEZc2wQ1cRO0eYAUcMMLAKNJ80lTKN7yxn0sekTUN1NSDdOSctAAdm8xF1ucpBgaOK7vo+OoXZa2nJ5vNxbUM99qvVxeg6sCMqwVD03/BD2VeuUxGGJUIJgbi6RViZoEahk2GcTE5kAQiwuLqaPQ8YJgYJ2ODBVZHXzTosLVWpxJQr1RwCvBpNKTiBFX6TMXJk6cWgKpi0siRFkMrMXuVApOMUbXtFGHmoAQoyfR9lYa/G8reoSK/NUaN2eNWgEpODlNlVRPSC1pe3YRG7BaGMyyOLc4dF3NDO/Mv8GERLRnq/5uk6hZmfMrdaAQsdCecWyLR6ajfuhZQXqXvSKYlkLum6WmWh1Rgytaiq3lXIQ0KzNxplogC7/uDxaICmwFMQIe5j+0vkQjK0YRtkAAwPqtN22f08AAFJ9vkLJ2EHNrzRqgpii3hGM4B+lqipvCT1Zwrrc4Akm2cT8jQvta08zHOGA9upZuyRefMKtvIrAQ0BoSlqog4qD/tABWgvxxCP0S7leutd1BtdcPkDMOyIaRt4HujJn4K4+7tqsukqkvdsm9kffRt2apxDLHpLttvCAQ4j24Btj0Z+U7soibfa/1asb/u+sDzydMZPiMEf6441IRaGdRHaeo9pCKzoaUc8xBcktFHsa7hZR8bE1xiYzCJzABB5St+Lvp/I2XXIjLB0TnscZRs/TDnRGl0N0UudLZ7BNgmtOCD8gLtvrnpSOegfeO+yEbHsAosn/CJVD1jgxuQuARLEIz8Z8yew/zDanqL+zjnR3GayU3ddKqP8AlGuxZjZNXEsQZP93ivcRgX14VyK+qxX9bHmsb/5+ljg3rNaokbyAWXWF/0AAAAAABrhAfrtrFhR4yubI7X5QRqMK6xKrj7U3XuBHdGnLqSqcQAAAAACfpqyAUFVV1YAAAAAAAeGqjMAACcQiDrN+zmqsRbApltVCbB2uiQTTXkBAFUAMRKwOkHJEO1EaFKqz2cRjLG+xnss0LmiFMWMwOqi7MoAAAAAAAIPpQAAAAAAAABF////+wAAAABl1hf9AAAAAGXWF/0AAAAAAAIQDgAAAAAAAAA0Crt2twYzlx9tlARo8EHFjGit6NU5uJVQez40nh22JSTHSjgQajW5RNeQbb732lp/y/9sv9HmENJElTPq3K22/AizzBGRk8LG9r40CWoY4KWiKxi9UqTvbO8hGd/Q6XyH+vrfu68/YWiqdx50GJkhYQS/nLfF9lgMMWf+svoFsyU8hbanvEjRht/xhRD30QKgQ0XqHBBRB5x1oagos+qIqYZY6Izt6SpS/Fj4p6qUrezAAEmVz83V+LurKg3kaurFWAzvwhnsQyop'}
+
+@pytest.fixture
+def json_get_pyth_price_at_time_v2(feed_id: str):
+    return {'binary': {'encoding': 'base64', 'data': ['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']}, 'parsed': [{'id': feed_id, 'price': {'price': '345341366', 'conf': '315539', 'expo': -8, 'publish_time': 1708529433}, 'ema_price': {'price': '345109090', 'conf': '338082', 'expo': -8, 'publish_time': 1708529433}, 'metadata': {'slot': 126265515, 'proof_available_time': 1708529435, 'prev_publish_time': 1708529433}}]}
 
 @pytest.fixture
 def mock_get_price_feed_ids(mocker: MockerFixture):
     async_mock = AsyncMock()
     mocker.patch('pythclient.hermes.HermesClient.get_price_feed_ids', side_effect=async_mock)
     return async_mock
+
+def test_parse_unsupported_version():
+    with pytest.raises(ValueError):
+        parse_unsupported_version(3)
+    with pytest.raises(TypeError):
+        parse_unsupported_version("3")
 
 @pytest.mark.asyncio
 async def test_hermes_add_feed_ids(hermes_client: HermesClient, mock_get_price_feed_ids: AsyncMock):
@@ -108,8 +134,83 @@ def test_hermes_extract_price_feed_v1(hermes_client: HermesClient, data_v1: dict
     assert set(price_feed.keys()) == set(PriceFeed.__annotations__.keys())        
     
 def test_hermes_extract_price_feed_v2(hermes_client: HermesClient, data_v2: dict):
-    price_feed = hermes_client.extract_price_feed_v2(data_v2)
+    price_feeds = hermes_client.extract_price_feed_v2(data_v2)
 
-    assert isinstance(price_feed, list)
-    assert isinstance(price_feed[0], dict)
-    assert set(price_feed[0].keys()) == set(PriceFeed.__annotations__.keys())
+    assert isinstance(price_feeds, list)
+    assert isinstance(price_feeds[0], dict)
+    assert set(price_feeds[0].keys()) == set(PriceFeed.__annotations__.keys())
+
+@pytest.mark.asyncio
+async def test_get_price_feed_ids(hermes_client: HermesClient, json_get_price_feed_ids: list[str], mocker: AsyncMock):
+    mocker.patch('httpx.AsyncClient.get', return_value = httpx.Response(200, json=json_get_price_feed_ids))        
+    result = await hermes_client.get_price_feed_ids()
+    
+    assert result == json_get_price_feed_ids
+
+@pytest.mark.asyncio
+async def test_get_pyth_prices_latest_v1(hermes_client: HermesClient, feed_ids: list[str], json_get_pyth_prices_latest_v1: list[dict], mocker: AsyncMock):
+    mocker.patch('httpx.AsyncClient.get', return_value = httpx.Response(200, json=json_get_pyth_prices_latest_v1))        
+    result = await hermes_client.get_pyth_prices_latest(feed_ids, version=1)
+    
+    assert isinstance(result, list)
+    assert len(result) == len(feed_ids)
+    assert isinstance(result[0], dict)
+    assert set(result[0].keys()) == set(PriceFeed.__annotations__.keys())
+
+@pytest.mark.asyncio
+async def test_get_pyth_prices_latest_v2(hermes_client: HermesClient, feed_ids: list[str], json_get_pyth_prices_latest_v2: list[str], mocker: AsyncMock):
+    mocker.patch('httpx.AsyncClient.get', return_value = httpx.Response(200, json=json_get_pyth_prices_latest_v2))        
+    result = await hermes_client.get_pyth_prices_latest(feed_ids, version=2)
+
+    assert isinstance(result, list)
+    assert len(result) == len(feed_ids)
+    assert isinstance(result[0], dict)
+    assert set(result[0].keys()) == set(PriceFeed.__annotations__.keys())
+
+@pytest.mark.asyncio
+async def test_get_pyth_prices_latest_v3(hermes_client: HermesClient, feed_ids: list[str], mocker: AsyncMock):
+    mocker.patch('httpx.AsyncClient.get', return_value = httpx.Response(200, json=[]))
+    with pytest.raises(ValueError):
+        await hermes_client.get_pyth_prices_latest(feed_ids, version=3)
+
+@pytest.mark.asyncio
+async def test_get_pyth_price_at_time_v1(hermes_client: HermesClient, feed_id: str, json_get_pyth_price_at_time_v1: dict, mocker: AsyncMock):
+    mocker.patch('httpx.AsyncClient.get', return_value = httpx.Response(200, json=json_get_pyth_price_at_time_v1))
+    result = await hermes_client.get_pyth_price_at_time(feed_id, 1708529661, version=1)
+
+    assert isinstance(result, dict)
+    assert set(result.keys()) == set(PriceFeed.__annotations__.keys())
+
+@pytest.mark.asyncio
+async def test_get_pyth_price_at_time_v2(hermes_client: HermesClient, feed_id: str, json_get_pyth_price_at_time_v2: dict, mocker: AsyncMock):
+    mocker.patch('httpx.AsyncClient.get', return_value = httpx.Response(200, json=json_get_pyth_price_at_time_v2))
+    result = await hermes_client.get_pyth_price_at_time(feed_id, 1708529661, version=2)
+
+    assert isinstance(result, dict)
+    assert set(result.keys()) == set(PriceFeed.__annotations__.keys())
+
+@pytest.mark.asyncio
+async def test_get_pyth_price_at_time_v3(hermes_client: HermesClient, feed_id: str, mocker: AsyncMock):
+    mocker.patch('httpx.AsyncClient.get', return_value = httpx.Response(200, json=[]))
+    with pytest.raises(ValueError):
+        await hermes_client.get_pyth_price_at_time(feed_id, 1708529661, version=3)
+
+@pytest.mark.asyncio
+async def test_get_all_prices_v1(hermes_client: HermesClient, json_get_pyth_prices_latest_v1: list[dict], mocker: AsyncMock):
+    mocker.patch('httpx.AsyncClient.get', return_value = httpx.Response(200, json=json_get_pyth_prices_latest_v1))
+    result = await hermes_client.get_all_prices(version=1)
+
+    assert isinstance(result, dict)
+    assert set(result.keys()) == set(hermes_client.feed_ids)
+    assert isinstance(result[hermes_client.feed_ids[0]], dict)
+    assert set(result[hermes_client.feed_ids[0]].keys()) == set(PriceFeed.__annotations__.keys())
+
+@pytest.mark.asyncio
+async def test_get_all_prices_v2(hermes_client: HermesClient, json_get_pyth_prices_latest_v2: list[dict], mocker: AsyncMock):
+    mocker.patch('httpx.AsyncClient.get', return_value = httpx.Response(200, json=json_get_pyth_prices_latest_v2))
+    result = await hermes_client.get_all_prices(version=2)
+
+    assert isinstance(result, dict)
+    assert set(result.keys()) == set(hermes_client.feed_ids)
+    assert isinstance(result[hermes_client.feed_ids[0]], dict)
+    assert set(result[hermes_client.feed_ids[0]].keys()) == set(PriceFeed.__annotations__.keys())

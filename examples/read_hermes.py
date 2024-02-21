@@ -8,7 +8,7 @@ async def get_hermes_prices():
     hermes_client = HermesClient([])
     feed_ids = await hermes_client.get_price_feed_ids()
     feed_ids_rel = feed_ids[:2]
-    version_http = 2
+    version_http = 1
     version_ws = 1
 
     hermes_client.add_feed_ids(feed_ids_rel)
