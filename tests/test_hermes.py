@@ -4,7 +4,7 @@ from pytest_mock import MockerFixture
 
 from mock import AsyncMock
 
-from pythclient.hermes import HermesClient, PriceFeed
+from pythclient.hermes import HermesClient, PriceFeed, parse_unsupported_version
 
 @pytest.fixture
 def feed_ids():
@@ -72,6 +72,12 @@ def data_v2():
         ]
     }
 
+def test_parse_unsupported_version():
+    with pytest.raises(ValueError):
+        parse_unsupported_version(3)
+    with pytest.raises(TypeError):
+        parse_unsupported_version("3")
+
 @pytest.fixture
 def mock_get_price_feed_ids(mocker: MockerFixture):
     async_mock = AsyncMock()
@@ -87,8 +93,11 @@ async def test_hermes_add_feed_ids(hermes_client: HermesClient, mock_get_price_f
     feed_ids_pre = hermes_client.feed_ids
     pending_feed_ids_pre = hermes_client.pending_feed_ids
 
-    hermes_client.add_feed_ids(feed_ids)
+    # Add feed_ids to the client in duplicate
+    for _ in range(3):
+        hermes_client.add_feed_ids(feed_ids)
 
+    assert len(set(hermes_client.feed_ids)) == len(hermes_client.feed_ids)
     assert set(hermes_client.feed_ids) == set(feed_ids_pre + feed_ids)
     assert set(hermes_client.pending_feed_ids) == set(pending_feed_ids_pre + feed_ids)
 

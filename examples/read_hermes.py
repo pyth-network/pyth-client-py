@@ -15,8 +15,6 @@ async def get_hermes_prices():
 
     prices_latest = await hermes_client.get_all_prices(version=version_http)
 
-    sd = list(prices_latest.keys())[0]
-
     for feed_id, price_feed in prices_latest.items():
         print("Initial prices")
         print(f"Feed ID: {feed_id}, Price: {price_feed['price'].price}, Confidence: {price_feed['price'].conf}, Time: {price_feed['price'].publish_time}")
