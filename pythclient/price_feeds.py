@@ -1,7 +1,7 @@
 import base64
 import binascii
 from struct import unpack
-from typing import List, Literal, Optional, Union, cast
+from typing import List, Literal, Optional, Union, cast, TypedDict
 
 from Crypto.Hash import keccak
 from loguru import logger
@@ -17,6 +17,11 @@ ACCUMULATOR_MAGIC = "504e4155"
 
 MAX_MESSAGE_IN_SINGLE_UPDATE_DATA = 255
 
+class PriceDict(TypedDict):
+    conf: str
+    expo: int
+    price: str
+    publish_time: int
 
 class Price:
     def __init__(self, conf, expo, price, publish_time) -> None:
@@ -35,6 +40,16 @@ class Price:
             "price": self.price,
             "publish_time": self.publish_time,
         }
+    
+    @staticmethod
+    def from_dict(price_dict: PriceDict):
+        return Price(
+            conf=int(price_dict["conf"]),
+            expo=price_dict["expo"],
+            price=int(price_dict["price"]),
+            publish_time=price_dict["publish_time"],
+        )
+
 
 
 class PriceUpdate:
