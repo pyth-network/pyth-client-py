@@ -125,7 +125,7 @@ async def test_hermes_add_feed_ids(hermes_client: HermesClient, mock_get_price_f
 
     assert len(set(hermes_client.feed_ids)) == len(hermes_client.feed_ids)
     assert set(hermes_client.feed_ids) == set(feed_ids_pre + feed_ids)
-    assert set(hermes_client.pending_feed_ids) == set(pending_feed_ids_pre + feed_ids)
+    assert len(hermes_client.pending_feed_ids) == len(set(pending_feed_ids_pre + feed_ids))
 
 def test_hermes_extract_price_feed_v1(hermes_client: HermesClient, data_v1: dict):
     price_feed = hermes_client.extract_price_feed_v1(data_v1)

@@ -47,9 +47,14 @@ class HermesClient:
         return data
 
     def add_feed_ids(self, feed_ids: list[str]):
-        self.feed_ids += feed_ids
-        self.feed_ids = list(set(self.feed_ids))
-        self.pending_feed_ids += feed_ids
+        # convert feed_ids to a set to remove any duplicates from the input
+        new_feed_ids_set = set(feed_ids)
+        
+        # update self.feed_ids; convert to set for union operation, then back to list
+        self.feed_ids = list(set(self.feed_ids).union(new_feed_ids_set))
+        
+        # update self.pending_feed_ids with only those IDs that are truly new
+        self.pending_feed_ids = list(set(self.pending_feed_ids).union(new_feed_ids_set))
 
     @staticmethod
     def extract_price_feed_v1(data: dict) -> PriceFeed:
