@@ -54,3 +54,18 @@ def test_deserialise_null_publisher_key(price_component: PythPriceComponent, pri
     bad_bytes = bytes(b'\x00' * SolanaPublicKey.LENGTH) + price_component_bytes[SolanaPublicKey.LENGTH:]
     actual = PythPriceComponent.deserialise(bad_bytes, exponent=price_component.exponent)
     assert actual is None
+
+
+def test_price_component_to_json(price_component: PythPriceComponent, price_component_bytes: bytes):
+
+    ignore_keys = set()
+    must_contain_keys = set()
+
+    keys_json = set(price_component.to_json().keys())
+    keys_orig = set(price_component.__dict__.keys())
+
+    # test for differences
+    assert keys_orig - ignore_keys == keys_json - ignore_keys
+
+    # test for missing keys
+    assert must_contain_keys.issubset(keys_json)

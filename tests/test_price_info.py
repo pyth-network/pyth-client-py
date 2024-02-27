@@ -125,3 +125,17 @@ def test_price_info_str(price_info_trading):
     expected = "PythPriceInfo status PythPriceStatus.TRADING price 596.09162"
     assert str(price_info_trading) == expected
     assert repr(price_info_trading) == expected
+
+def test_price_info_to_json(price_info_trading):
+
+    ignore_keys = set()
+    must_contain_keys = set()
+
+    keys_json = set(price_info_trading.to_json().keys())
+    keys_orig = set(price_info_trading.__dict__.keys())
+
+    # test for differences
+    assert keys_orig - ignore_keys == keys_json - ignore_keys
+
+    # test for missing keys
+    assert must_contain_keys.issubset(keys_json)
