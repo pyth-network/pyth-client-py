@@ -7,6 +7,8 @@ import struct
 
 from loguru import logger
 
+from pythclient.market_schedule import MarketSchedule
+
 from . import exceptions
 from .solana import SolanaPublicKey, SolanaPublicKeyOrStr, SolanaClient, SolanaAccount
 
@@ -229,6 +231,13 @@ class PythProductAccount(PythAccount):
         Gets this account's symbol, or 'Unknown' if there is no 'symbol' attribute.
         """
         return self.attrs.get("symbol", "Unknown")
+    
+    @property
+    def schedule(self) -> MarketSchedule:
+        """
+        Gets the market schedule for this product. If the schedule is not set, returns an always open schedule.
+        """
+        return MarketSchedule(self.attrs.get("schedule", "America/New_York;O,O,O,O,O,O,O;"))
 
     async def get_prices(self) -> Dict[PythPriceType, PythPriceAccount]:
         """
