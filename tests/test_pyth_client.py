@@ -3,7 +3,7 @@ import pytest
 import base64
 from pythclient.exceptions import NotLoadedException
 from pythclient.pythaccounts import (
-    _ACCOUNT_HEADER_BYTES, _VERSION_2, PythMappingAccount, PythPriceType, PythProductAccount, PythPriceAccount
+    ACCOUNT_HEADER_BYTES, _VERSION_2, PythMappingAccount, PythPriceType, PythProductAccount, PythPriceAccount
 )
 
 from pythclient.pythclient import PythClient, WatchSession
@@ -234,7 +234,7 @@ def product_account(solana_client: SolanaClient) -> PythProductAccount:
 
 @ pytest.fixture
 def product_account_bytes() -> bytes:
-    return base64.b64decode(PRODUCT_ACCOUNT_B64_DATA)[_ACCOUNT_HEADER_BYTES:]
+    return base64.b64decode(PRODUCT_ACCOUNT_B64_DATA)[ACCOUNT_HEADER_BYTES:]
 
 
 @ pytest.fixture
@@ -247,7 +247,7 @@ def price_account(solana_client: SolanaClient) -> PythPriceAccount:
 
 @ pytest.fixture
 def price_account_bytes() -> bytes:
-    return base64.b64decode(PRICE_ACCOUNT_B64_DATA)[_ACCOUNT_HEADER_BYTES:]
+    return base64.b64decode(PRICE_ACCOUNT_B64_DATA)[ACCOUNT_HEADER_BYTES:]
 
 
 @pytest.fixture()
