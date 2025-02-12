@@ -17,9 +17,9 @@ _MAGIC = 0xA1B2C3D4
 _VERSION_1 = 1
 _VERSION_2 = 2
 _SUPPORTED_VERSIONS = set((_VERSION_1, _VERSION_2))
-_ACCOUNT_HEADER_BYTES = 16  # magic + version + type + size, u32 * 4
+ACCOUNT_HEADER_BYTES = 16  # magic + version + type + size, u32 * 4
 _NULL_KEY_BYTES = b'\x00' * SolanaPublicKey.LENGTH
-MAX_SLOT_DIFFERENCE = 25
+DEFAULT_MAX_LATENCY = 25
 
 
 class PythAccountType(Enum):
@@ -81,7 +81,7 @@ def _read_attribute_string(buffer: bytes, offset: int) -> Tuple[Optional[str], i
 
 
 def _parse_header(buffer: bytes, offset: int = 0, *, key: SolanaPublicKeyOrStr) -> Tuple[PythAccountType, int, int]:
-    if len(buffer) - offset < _ACCOUNT_HEADER_BYTES:
+    if len(buffer) - offset < ACCOUNT_HEADER_BYTES:
         raise ValueError("Pyth account data too short")
 
     # Pyth magic (u32) == MAGIC
@@ -141,7 +141,7 @@ class PythAccount(SolanaAccount):
                 f"wrong Pyth account type {type_} for {type(self)}")
 
         try:
-            self.update_from(data[:size], version=version, offset=_ACCOUNT_HEADER_BYTES)
+            self.update_from(data[:size], version=version, offset=ACCOUNT_HEADER_BYTES)
         except Exception as e:
             logger.exception("error while parsing account", exception=e)
 
@@ -482,6 +482,7 @@ class PythPriceAccount(PythAccount):
             aggregate price is composed of
         slot (int): the slot time when this account was last fetched
         product (Optional[PythProductAccount]): the product this price is for, if loaded
+        max_latency (int): the maximum allowed slot difference for this feed
     """
 
     def __init__(self, key: SolanaPublicKey, solana: SolanaClient, *, product: Optional[PythProductAccount] = None) -> None:
@@ -503,6 +504,7 @@ class PythPriceAccount(PythAccount):
         self.prev_price: float = field(init=False)
         self.prev_conf: float = field(init=False)
         self.prev_timestamp: int = 0  # unix timestamp in seconds
+        self.max_latency: int = 0 # maximum allowed slot difference for this feed
 
     @property
     def aggregate_price(self) -> Optional[float]:
@@ -537,7 +539,7 @@ class PythPriceAccount(PythAccount):
         You might consider using this function with the latest solana slot to make sure the price has not gone stale.
         """
         if self.aggregate_price_info.price_status == PythPriceStatus.TRADING and \
-            slot - self.aggregate_price_info.pub_slot > MAX_SLOT_DIFFERENCE:
+            slot - self.aggregate_price_info.pub_slot > self.max_latency:
             return PythPriceStatus.UNKNOWN
 
         return self.aggregate_price_info.price_status
@@ -571,9 +573,12 @@ class PythPriceAccount(PythAccount):
             derivations = list(struct.unpack_from("<6q", buffer, offset))
             self.derivations = dict((type_, derivations[type_.value - 1]) for type_ in [EmaType.EMA_CONFIDENCE_VALUE, EmaType.EMA_PRICE_VALUE])
             offset += 48  # struct.calcsize("6q")
-            # drv[2-4]_ fields are currently unused
             timestamp, min_publishers = struct.unpack_from("<qB", buffer, offset)
-            offset += 16  # struct.calcsize("qBbhi") ("bhi" is drv_2, drv_3, drv_4)
+            offset += 9  # struct.calcsize("qB")
+            _message_sent, max_latency = struct.unpack_from("<bB", buffer, offset)
+            offset += 2  # struct.calcsize("bB")
+            _drv_3, _drv_4 = struct.unpack_from("<bi", buffer, offset)
+            offset += 5  # struct.calcsize("bi")
             product_account_key_bytes, next_price_account_key_bytes = struct.unpack_from("32s32s", buffer, offset)
             offset += 64  # struct.calcsize("32s32s")
             prev_slot, prev_price, prev_conf, prev_timestamp = struct.unpack_from("<QqQq", buffer, offset)
@@ -620,6 +625,8 @@ class PythPriceAccount(PythAccount):
         self.prev_price = prev_price
         self.prev_conf = prev_conf
         self.prev_timestamp = prev_timestamp
+        # a max latency of 0 is the default max latency
+        self.max_latency = max_latency if max_latency != 0 else DEFAULT_MAX_LATENCY
 
     def __str__(self) -> str:
         if self.product:
