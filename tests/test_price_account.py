@@ -4,7 +4,6 @@ from dataclasses import asdict
 
 from pythclient.pythaccounts import (
     ACCOUNT_HEADER_BYTES,
-    DEFAULT_MAX_LATENCY,
     PythPriceAccount,
     PythPriceType,
     PythPriceStatus,
@@ -14,7 +13,7 @@ from pythclient.solana import SolanaPublicKey, SolanaClient
 
 
 # Yes, this sucks, but it is actually a monster datastructure
-# Equity.US.AAPL/USD symbol
+# Equity.US.AAPL/USD symbol with a max latency of 50 slots
 @pytest.fixture
 def price_account_bytes():
     return base64.b64decode((
@@ -316,7 +315,7 @@ def test_price_account_agregate_conf_interval(
 ):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=ACCOUNT_HEADER_BYTES)
     price_account.slot = price_account.aggregate_price_info.pub_slot
-    assert price_account.aggregate_price_confidence_interval == 0.366305
+    assert price_account.aggregate_price_confidence_interval == 0.14454
 
 
 def test_price_account_agregate_price(
@@ -324,7 +323,7 @@ def test_price_account_agregate_price(
 ):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=ACCOUNT_HEADER_BYTES)
     price_account.slot = price_account.aggregate_price_info.pub_slot
-    assert price_account.aggregate_price == 707.125
+    assert price_account.aggregate_price == 236.23373
 
 def test_price_account_unknown_status(
     price_account_bytes: bytes, price_account: PythPriceAccount,
@@ -340,7 +339,7 @@ def test_price_account_get_aggregate_price_status_still_trading(
     price_account_bytes: bytes, price_account: PythPriceAccount
 ):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=ACCOUNT_HEADER_BYTES)
-    price_account.slot = price_account.aggregate_price_info.pub_slot + DEFAULT_MAX_LATENCY
+    price_account.slot = price_account.aggregate_price_info.pub_slot + 50
 
     price_status = price_account.aggregate_price_status
     assert price_status == PythPriceStatus.TRADING
@@ -349,7 +348,7 @@ def test_price_account_get_aggregate_price_status_got_stale(
     price_account_bytes: bytes, price_account: PythPriceAccount
 ):
     price_account.update_from(buffer=price_account_bytes, version=2, offset=ACCOUNT_HEADER_BYTES)
-    price_account.slot = price_account.aggregate_price_info.pub_slot + DEFAULT_MAX_LATENCY + 1
+    price_account.slot = price_account.aggregate_price_info.pub_slot + 50 + 1
 
     price_status = price_account.aggregate_price_status
     assert price_status == PythPriceStatus.UNKNOWN
