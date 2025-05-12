@@ -20,8 +20,8 @@ DEVNET_ENDPOINT = "api.devnet.solana.com"
 TESTNET_ENDPOINT = "api.testnet.solana.com"
 MAINNET_ENDPOINT = "api.mainnet-beta.solana.com"
 PYTHNET_ENDPOINT = "pythnet.rpcpool.com"
-PYTHTEST_CROSSCHAIN_ENDPOINT = "api.pythtest.pyth.network"
-PYTHTEST_CONFORMANCE_ENDPOINT = "api.pythtest.pyth.network"
+PYTHTEST_CROSSCHAIN_ENDPOINT = "api2.pythtest.pyth.network"
+PYTHTEST_CONFORMANCE_ENDPOINT = "api2.pythtest.pyth.network"
 
 SOLANA_DEVNET_WS_ENDPOINT = WS_PREFIX + "://" + DEVNET_ENDPOINT
 SOLANA_DEVNET_HTTP_ENDPOINT = HTTP_PREFIX + "://" + DEVNET_ENDPOINT
