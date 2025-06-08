@@ -1,7 +1,7 @@
 Pyth Client in Python
 =====================
 
-[![pytest](https://github.com/pyth-network/pyth-client-py/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/pyth-network/pyth-client-py/actions/workflows/pytest.yml)
+[![pytest](https://github.com/pyth-network/pyth-client-py/actions/workflows/pytest.yml/badge.svg)](https://github.com/pyth-network/pyth-client-py/actions/workflows/pytest.yml)
 
 A Python library to retrieve data from Pyth account structures off the Solana blockchain.
 
