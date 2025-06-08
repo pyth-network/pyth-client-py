@@ -196,6 +196,13 @@ class PythMappingAccount(PythAccount):
     def __str__(self) -> str:
         return f"PythMappingAccount ({self.key})"
 
+    def to_json(self):
+
+        return {
+            'entries': [str(x) for x in self.entries],
+            'next_account_key': str(self.next_account_key)
+        }
+
 
 class PythProductAccount(PythAccount):
     """
@@ -360,6 +367,12 @@ class PythProductAccount(PythAccount):
             if not key.startswith('_'):
                 yield key, val
 
+    def to_json(self):
+
+        return {
+            'symbol': self.symbol,
+        }
+
 
 @dataclass
 class PythPriceInfo:
@@ -415,6 +428,19 @@ class PythPriceInfo:
     def __repr__(self) -> str:
         return str(self)
 
+    def to_json(self):
+
+        return {
+            "price": self.price,
+            "confidence_interval": self.confidence_interval,
+            "price_status": self.price_status.name,
+            "pub_slot": self.pub_slot,
+            "exponent": self.exponent,
+            "raw_confidence_interval": self.raw_confidence_interval,
+            "raw_price": self.raw_price
+        }
+
+
 
 @dataclass
 class PythPriceComponent:
@@ -458,6 +484,15 @@ class PythPriceComponent:
         offset += PythPriceInfo.LENGTH
         latest_price = PythPriceInfo.deserialise(buffer, offset, exponent=exponent)
         return PythPriceComponent(key, last_aggregate_price, latest_price, exponent)
+
+    def to_json(self):
+
+        return {
+            "publisher_key": str(self.publisher_key),
+            "last_aggregate_price_info": self.last_aggregate_price_info.to_json(),
+            "latest_price_info": self.latest_price_info.to_json(),
+            "exponent": self.exponent
+        }
 
 
 class PythPriceAccount(PythAccount):
@@ -633,6 +668,25 @@ class PythPriceAccount(PythAccount):
             return f"PythPriceAccount {self.product.symbol} {self.price_type} ({self.key})"
         else:
             return f"PythPriceAccount {self.price_type} ({self.key})"
+
+    def to_json(self):
+
+        return {
+            "product": self.product.to_json() if self.product else None,
+            "price_type": self.price_type.name,
+            "exponent": self.exponent,
+            "num_components": self.num_components,
+            "last_slot": self.last_slot,
+            "valid_slot": self.valid_slot,
+            "product_account_key": str(self.product_account_key),
+            "next_price_account_key": str(self.next_price_account_key),
+            "aggregate_price_info": self.aggregate_price_info.to_json() if self.aggregate_price_info else None,
+            "price_components": [x.to_json() for x in self.price_components],
+            "derivations": {EmaType(x).name: self.derivations.get(x) for x in list(self.derivations.keys())},
+            "min_publishers": self.min_publishers,
+            "aggregate_price": self.aggregate_price,
+            "aggregate_price_confidence_interval": self.aggregate_price_confidence_interval
+        }
 
 
 _ACCOUNT_TYPE_TO_CLASS = {

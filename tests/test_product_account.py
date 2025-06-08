@@ -126,3 +126,18 @@ def test_symbol_property_unknown(product_account: PythProductAccount, solana_cli
         solana=solana_client,
     )
     assert actual.symbol == "Unknown"
+
+
+def test_product_account_to_json(product_account: PythProductAccount):
+    # attributes which are not part of to_json
+    ignore_keys = {"_prices", "attrs", "first_price_account_key", "key", "lamports", "slot", "solana", "symbol"}
+    must_contain_keys = {"symbol"}
+
+    keys_json = set(product_account.to_json().keys())
+    keys_orig = set(product_account.__dict__.keys())
+
+    # test for differences
+    assert keys_orig - ignore_keys == keys_json - ignore_keys
+
+    # test for missing keys
+    assert must_contain_keys.issubset(keys_json)
