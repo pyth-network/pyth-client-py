@@ -57,6 +57,36 @@ The `examples` directory includes some example applications that demonstrate how
 * `examples/dump.py` is a detailed usage example that demonstrates the asynchronous API to update prices using a websocket subscription or account polling.
 * `examples/read_one_price_feed.py` shows how to read the price of a single price feed using its account key.
 
+Configuring default RPC endpoints
+--------------------------------
+
+Set the following environment variables before importing the client modules to override their default RPC hosts:
+
+| Environment variable | Built-in host |
+| --- | --- |
+| `DEVNET_ENDPOINT` | `api.devnet.solana.com` |
+| `TESTNET_ENDPOINT` | `api.testnet.solana.com` |
+| `MAINNET_ENDPOINT` | `api.mainnet-beta.solana.com` |
+| `PYTHNET_ENDPOINT` | `pythnet.rpcpool.com` |
+| `PYTHTEST_CROSSCHAIN_ENDPOINT` | `api2.pythtest.pyth.network` |
+| `PYTHTEST_CONFORMANCE_ENDPOINT` | `api2.pythtest.pyth.network` |
+
+For example:
+
+```sh
+export PYTHNET_ENDPOINT=rpc.example.com:443
+```
+
+Values are hostnames or IP addresses, optionally with a port. IPv6 addresses must be bracketed, for example `[::1]:8899`.
+Do not include a scheme, credentials, path, query or fragment. HTTP and WebSocket constants are derived from the host
+using `https://` and `wss://` respectively. Empty, whitespace-containing or syntactically invalid values use the
+built-in host instead. Host syntax is checked locally; availability is not checked.
+
+Explicit `SolanaClient(endpoint=..., ws_endpoint=...)` or
+`PythClient(solana_endpoint=..., solana_ws_endpoint=...)` arguments take precedence over these defaults.
+Use explicit full URLs when HTTP and WebSocket addresses differ or require paths or query parameters.
+Environment variables are read once at import time; later changes do not alter the constants or constructor defaults.
+
 Developer Setup
 ---------------
 

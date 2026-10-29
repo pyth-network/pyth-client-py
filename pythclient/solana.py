@@ -3,6 +3,10 @@ from typing import Union, Optional, Dict, List, Any, Sequence, cast
 from typing_extensions import Literal
 import asyncio
 import json
+import os
+import re
+from ipaddress import IPv4Address
+from urllib.parse import urlsplit
 
 import aiohttp
 import backoff
@@ -16,12 +20,44 @@ from . import config
 WS_PREFIX = "wss"
 HTTP_PREFIX = "https"
 
-DEVNET_ENDPOINT = "api.devnet.solana.com"
-TESTNET_ENDPOINT = "api.testnet.solana.com"
-MAINNET_ENDPOINT = "api.mainnet-beta.solana.com"
-PYTHNET_ENDPOINT = "pythnet.rpcpool.com"
-PYTHTEST_CROSSCHAIN_ENDPOINT = "api2.pythtest.pyth.network"
-PYTHTEST_CONFORMANCE_ENDPOINT = "api2.pythtest.pyth.network"
+
+def _get_endpoint_host(name: str, default: str) -> str:
+    """Read a host override, retaining the default for malformed values."""
+    value = os.environ.get(name, "")
+    if not value or not value.isprintable() or any(char.isspace() or char in "/?#\\" for char in value):
+        return default
+    try:
+        address = urlsplit("//" + value)
+        host = address.hostname
+        port = address.port
+        if not host or address.username is not None or address.password is not None or port == 0 or value.endswith(":"):
+            return default
+        if ":" in host:
+            # urlsplit validates the IPv6 literal; also require a valid suffix.
+            if not re.fullmatch(r"\[[^\]]+\](?::[0-9]+)?", value):
+                return default
+        else:
+            if "[" in value or "]" in value:
+                return default
+            host = host.encode("idna").decode("ascii").rstrip(".")
+            labels = host.split(".")
+            if len(host) > 253 or any(
+                not re.fullmatch(r"[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?", label) for label in labels
+            ):
+                return default
+            if len(labels) == 4 and all(label.isdecimal() for label in labels):
+                IPv4Address(host)
+    except (ValueError, UnicodeError):
+        return default
+    return value
+
+
+DEVNET_ENDPOINT = _get_endpoint_host("DEVNET_ENDPOINT", "api.devnet.solana.com")
+TESTNET_ENDPOINT = _get_endpoint_host("TESTNET_ENDPOINT", "api.testnet.solana.com")
+MAINNET_ENDPOINT = _get_endpoint_host("MAINNET_ENDPOINT", "api.mainnet-beta.solana.com")
+PYTHNET_ENDPOINT = _get_endpoint_host("PYTHNET_ENDPOINT", "pythnet.rpcpool.com")
+PYTHTEST_CROSSCHAIN_ENDPOINT = _get_endpoint_host("PYTHTEST_CROSSCHAIN_ENDPOINT", "api2.pythtest.pyth.network")
+PYTHTEST_CONFORMANCE_ENDPOINT = _get_endpoint_host("PYTHTEST_CONFORMANCE_ENDPOINT", "api2.pythtest.pyth.network")
 
 SOLANA_DEVNET_WS_ENDPOINT = WS_PREFIX + "://" + DEVNET_ENDPOINT
 SOLANA_DEVNET_HTTP_ENDPOINT = HTTP_PREFIX + "://" + DEVNET_ENDPOINT
